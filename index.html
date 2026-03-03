@@ -19,7 +19,7 @@
 <!-- ═══════════════ PERFORMANCE ═══════════════ -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://api.anthropic.com">
+<!-- Worker URL définie dans ANTHROPIC_WORKER_URL -->
 <link rel="dns-prefetch" href="https://images.unsplash.com">
 
 <!-- ═══════════════ OPEN GRAPH ═══════════════ -->
@@ -1207,7 +1207,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
 
       <!-- MINI TIRE FINDER -->
       <div class="mini-finder">
-        <div class="mini-finder-header" onclick="toggleMiniFinder()" aria-expanded="false" id="miniFHeader">
+        <div class="mini-finder-header" onclick="openFinderSection(event)" style="cursor:pointer" id="miniFHeader">
           <span>🔍 Trouver ma taille de pneu</span>
           <span class="mini-finder-arrow" id="miniFArrow" aria-hidden="true">▼</span>
         </div>
@@ -1343,7 +1343,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
 
       <!-- MINI TIRE FINDER MOBILE -->
       <div class="mini-finder">
-        <div class="mini-finder-header" onclick="toggleMiniFinder2()" id="miniFHeader2">
+        <div class="mini-finder-header" onclick="openFinderSection(event)" style="cursor:pointer" id="miniFHeader2">
           <span>🔍 Trouver ma taille de pneu</span>
           <span class="mini-finder-arrow" id="miniFArrow2">▼</span>
         </div>
@@ -1846,7 +1846,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
       <a href="#accueil" class="footer-logo" aria-label="PneuPro Nantes - Accueil">Pneu<span>Pro</span></a>
       <p>Atelier de réparation et montage de pneus à Nantes (44) depuis 2012. Rapidité, honnêteté, savoir-faire.</p>
       <p style="margin-top:1rem;font-size:0.82rem">📞 <a href="tel:+33240507024" style="color:var(--gold);text-decoration:none;font-family:var(--font-head);font-weight:700;letter-spacing:0.08em" aria-label="Appeler PneuPro">02 40 50 70 24</a></p>
-      <p style="margin-top:0.4rem;font-size:0.82rem">✉️ <a href="mailto:contact@pneupro-nantes.fr" style="color:var(--gold);text-decoration:none;font-family:var(--font-head);font-weight:700;letter-spacing:0.05em">contact@pneupro-nantes.fr</a></p>
+      <p style="margin-top:0.4rem;font-size:0.82rem">✉️ <a href="/cdn-cgi/l/email-protection#b8dbd7d6ccd9dbccf8c8d6ddcdc8cad795d6d9d6ccddcb96deca" style="color:var(--gold);text-decoration:none;font-family:var(--font-head);font-weight:700;letter-spacing:0.05em"><span class="__cf_email__" data-cfemail="83e0ecedf7e2e0f7c3f3ede6f6f3f1ecaeede2edf7e6f0ade5f1">[email&#160;protected]</span></a></p>
     </div>
     <div class="footer-col">
       <h4>Navigation</h4>
@@ -1864,7 +1864,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
         <p style="margin-top:0.7rem">Lun–Ven : 8h–19h<br>Sam : 8h30–17h30<br>Dim : Fermé</p>
       </address>
       <a href="tel:+33240507024" style="margin-top:0.7rem;display:block" aria-label="Appeler PneuPro Nantes">📞 02 40 50 70 24</a>
-      <a href="mailto:contact@pneupro-nantes.fr" style="margin-top:0.3rem">contact@pneupro-nantes.fr</a>
+      <a href="/cdn-cgi/l/email-protection#3e5d51504a5f5d4a7e4e505b4b4e4c5113505f504a5b4d10584c" style="margin-top:0.3rem"><span class="__cf_email__" data-cfemail="13707c7d6772706753637d766663617c3e7d727d6776603d7561">[email&#160;protected]</span></a>
     </div>
   </div>
   <div class="footer-bottom">
@@ -1886,7 +1886,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js" defer></script>
+<!-- email-decode: injecté automatiquement par Cloudflare sur le serveur de production --><script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js" defer></script>
 <script>
 // === DONNÉES VÉHICULES ===
 const catalogueVehicules = {
@@ -1979,7 +1979,26 @@ function showResult(containerId, data) {
 }
 
 // Clé RapidAPI SIV — remplacez par votre clé après inscription sur rapidapi.com
-const RAPIDAPI_KEY = '7a1d7ee643msh49518d14aaa93a2p1738adjsnbc738be565b6';
+const RAPIDAPI_KEY = 'acc35ab39emsh20570ca1b3c14e8p1f292fjsn3f142a13e238';
+
+// ═══ CLOUDFLARE WORKER PROXY ═══
+// Remplacez par l'URL de votre Worker après déploiement
+const ANTHROPIC_WORKER_URL = 'https://pneupro-ai.VOTRE-COMPTE.workers.dev';
+
+// Helper centralisé — appelle le Worker (clé cachée côté serveur)
+async function callAnthropic(messages, max_tokens = 500, model = 'claude-sonnet-4-20250514') {
+  const res = await fetch(ANTHROPIC_WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, max_tokens, messages })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('Worker ' + res.status + ': ' + err);
+  }
+  const d = await res.json();
+  return d.content.map(c => c.text || '').join('').replace(/```json|```/g, '').trim();
+}
 
 // Base de données locale tailles pneus par marque/modèle
 const taillesDB = {
@@ -2088,19 +2107,39 @@ const taillesDB = {
 };
 
 function findTailleFromDB(marque, modele, annee) {
-  // Normaliser
-  const m = (marque || '').toUpperCase().trim();
-  const mo = (modele || '').toUpperCase().trim();
-  const an = (annee || '').toString().trim();
-  const key = m + '|' + mo;
-  const entry = taillesDB[key];
-  if (!entry) return null;
-  return { taille: entry[an] || entry.default, marque: m, modele: mo, annee: an };
+  const m  = (marque  || '').toUpperCase().trim();
+  const mo = (modele  || '').toUpperCase().trim();
+  const an = (annee   || '').toString().trim();
+
+  // 1. Clé exacte
+  let entry = taillesDB[m + '|' + mo];
+  if (entry) return { taille: entry[an] || entry.default, marque: m, modele: mo, annee: an };
+
+  // 2. Le modèle retourné par l'API peut contenir des suffixes : "CLIO III", "CLIO 3", "208 GTI"
+  //    On cherche la première clé dont le modèle commence par le modèle de la DB
+  const keys = Object.keys(taillesDB).filter(k => k.startsWith(m + '|'));
+  for (const k of keys) {
+    const dbModele = k.split('|')[1]; // ex: "CLIO"
+    if (mo.startsWith(dbModele) || dbModele.startsWith(mo.split(' ')[0])) {
+      entry = taillesDB[k];
+      return { taille: entry[an] || entry.default, marque: m, modele: dbModele, annee: an };
+    }
+  }
+  return null;
 }
+
+// Cache plaque → résultat pour éviter les appels répétés (429)
+const plaqueCache = {};
 
 async function searchPlaque() {
   const plaque = document.getElementById('plaqueInput').value.trim().toUpperCase().replace(/\s+/g, '-');
   if (!plaque || plaque.length < 7) { alert('Veuillez entrer une plaque valide (ex: AB-123-CD)'); return; }
+
+  // Résultat déjà en cache → afficher sans rappeler l'API
+  if (plaqueCache[plaque]) {
+    showResult('plaqueResult', plaqueCache[plaque]);
+    return;
+  }
 
   document.getElementById('plaqueLoading').style.display = 'block';
   document.getElementById('plaqueResult').classList.remove('show');
@@ -2114,56 +2153,62 @@ async function searchPlaque() {
       }
     });
 
+    if (res.status === 429) throw new Error('RATE_LIMIT');
     if (!res.ok) throw new Error('API error ' + res.status);
     const json = await res.json();
+    console.log('SIV API response:', JSON.stringify(json));
+    // L'API retourne parfois {"erreur":"..."} avec status 200
+    if (json.erreur && !json.marque) throw new Error('Plaque inconnue: ' + json.erreur);
     const vehicle = json.data || json;
-    console.log('SIV API response:', JSON.stringify(vehicle));
 
-    // Champs exacts retournés par l'API
+    // Champs exacts retournés par l'API SIV
     const marque  = vehicle.marque  || '';
     const modele  = vehicle.modele  || vehicle.modele_en || '';
-    const version = vehicle.version || '';
-    const dateStr = vehicle.date1erCir_fr || vehicle.datelerCir_fr || vehicle.date1erCir_us || vehicle.datelerCir_us || '';
-    const annee   = dateStr ? dateStr.split('-').pop() : '';
-    // "res" est le champ taille de pneu (ex: "195/65 CM5" → on normalise en "195/65 R15")
-    const tailleBrute = vehicle.res || vehicle.pneu_monte || vehicle.pneu || vehicle.pneumatique || '';
-    const taillePneu  = tailleBrute.replace(/\s+CM(\d+)$/i, ' R$1').replace(/\s+R(\d+)\s*$/, ' R$1').trim();
-    const vehiculeLabel = `${marque} ${modele}${version ? ' ' + version : ''} (${annee})`.trim();
+    const version = vehicle.version || vehicle.sra_commercial || '';
+    // Année : date1erCir_fr ou debut_modele
+    const dateStr = vehicle.date1erCir_fr || vehicle.datelerCir_fr || vehicle.date1erCir_us || '';
+    const annee   = dateStr ? dateStr.split('-')[0]
+                  : (vehicle.debut_modele ? vehicle.debut_modele.split('-')[0] : '');
+    // Taille pneu : chercher dans tous les champs possibles
+    const tailleBrute = vehicle.res || vehicle.pneu_monte || vehicle.pneu || vehicle.pneumatique
+                      || vehicle.pneumatiques || vehicle.pneus || vehicle.pneu_av || vehicle.dimensionPneu || '';
+    // Normaliser format : "195/65 R15", "195/65R15", "195/65 CM15" → "195/65 R15"
+    const taillePneu = tailleBrute
+      .replace(/([0-9]{3}\/[0-9]{2})\s*CM\s*([0-9]+)/i, '$1 R$2')
+      .replace(/([0-9]{3}\/[0-9]{2})\s*R\s*([0-9]+)/i, '$1 R$2')
+      .trim();
+    console.log('Parsed → marque:', marque, '| modele:', modele, '| annee:', annee, '| tailleBrute:', tailleBrute, '| taillePneu:', taillePneu);
+    const vehiculeLabel = (marque || modele)
+      ? `${[marque, modele, version].filter(Boolean).join(' ')}${annee ? ' (' + annee + ')' : ''}`.trim()
+      : null;
 
     // 1. L'API retourne directement la taille
     if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
-      showResult('plaqueResult', {
-        taille: taillePneu,
-        label: "Taille d'origine",
-        vehicule: vehiculeLabel,
-        pression: '2.3 / 2.1 bar'
-      });
+      const result1 = { taille: taillePneu, label: "Taille d'origine", vehicule: vehiculeLabel, pression: '2.3 / 2.1 bar' };
+      plaqueCache[plaque] = result1;
+      showResult('plaqueResult', result1);
     } else {
       // 2. Cherche dans la base locale avec marque/modèle/année retournés
       const found = findTailleFromDB(marque, modele, annee);
       if (found) {
-        showResult('plaqueResult', {
-          taille: found.taille,
-          label: "Taille d'origine estimée",
-          vehicule: vehiculeLabel,
-          pression: '2.3 / 2.1 bar'
-        });
+        const result2 = { taille: found.taille, label: "Taille d'origine estimée", vehicule: vehiculeLabel, pression: '2.3 / 2.1 bar' };
+        plaqueCache[plaque] = result2;
+        showResult('plaqueResult', result2);
       } else {
-        // 3. Véhicule trouvé mais taille inconnue
-        showResult('plaqueResult', {
-          taille: '—',
-          label: 'Appelez-nous avec le véhicule identifié',
-          vehicule: vehiculeLabel,
-          pression: ''
-        });
+        // 3. Véhicule trouvé mais taille inconnue → afficher véhicule + rediriger
+        const result3 = { taille: '—', label: 'Appelez-nous pour confirmation', vehicule: vehiculeLabel, pression: '' };
+        plaqueCache[plaque] = result3;
+        showResult('plaqueResult', result3);
       }
     }
   } catch(e) {
+    console.warn('SIV API erreur:', e.message);
     document.getElementById('plaqueResult').innerHTML = `
-      <div style="color:var(--gold);font-family:var(--font-head);font-size:0.8rem;margin-bottom:0.8rem">⚠️ Plaque non trouvée</div>
-      <p style="color:var(--text-mid);font-size:0.78rem;line-height:1.7">Essayez la recherche par véhicule, ou appelez-nous directement.</p>
+      <div style="color:var(--gold);font-family:var(--font-head);font-size:0.8rem;margin-bottom:0.8rem">⚠️ Plaque non trouvée automatiquement</div>
+      <p style="color:var(--text-mid);font-size:0.78rem;line-height:1.7">Utilisez la recherche <strong>Par Véhicule</strong> ci-dessus, ou appelez-nous.</p>
       <div class="result-cta" style="margin-top:1rem">
-        <a href="tel:+33240507024" class="btn-gold" style="font-size:0.72rem;padding:0.7rem 1.5rem">📞 02 40 50 70 24</a>
+        <a href="#tire-finder" onclick="openFinderSection(event);setTimeout(()=>switchTab('voiture'),600)" class="btn-gold" style="font-size:0.72rem;padding:0.7rem 1.5rem">🚗 Chercher par véhicule</a>
+        <a href="tel:+33240507024" class="btn-outline-gold" style="font-size:0.72rem;padding:0.7rem 1.5rem">📞 02 40 50 70 24</a>
       </div>`;
     document.getElementById('plaqueResult').classList.add('show');
   }
@@ -2202,7 +2247,7 @@ async function searchVoiture() {
     return;
   }
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch(ANTHROPIC_WORKER_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400,
         messages: [{ role: 'user', content: `Dimensions pneus d'origine pour ${marque} ${modele} ${annee}. JSON uniquement sans markdown: {"taille":"205/55 R16","alt":"215/50 R17","pression":"2.3 / 2.1 bar","label":"${marque} ${modele} ${annee} · Origine"}` }] })
@@ -2227,7 +2272,7 @@ function handlePhoto(e) {
     document.getElementById('photoLoading').style.display = 'block';
     document.getElementById('photoResult').classList.remove('show');
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch(ANTHROPIC_WORKER_URL, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500,
           messages: [{ role: 'user', content: [
@@ -2275,11 +2320,26 @@ function switchMiniTab(tab) {
   document.getElementById('mini-panel-' + tab).classList.add('active');
 }
 
-function showMiniResult(taille, label) {
+function showMiniResult(taille, label, vehicule) {
   miniFTailleFound = taille;
-  document.getElementById('miniFTaille').textContent = taille;
-  document.getElementById('miniFLabel').textContent = label;
-  document.getElementById('miniFResult').style.display = 'block';
+  const el = document.getElementById('miniFResult');
+  el.innerHTML = `
+    ${vehicule ? `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;padding-bottom:0.6rem;border-bottom:1px solid rgba(255,193,7,0.2)">
+      <span>🚗</span>
+      <div>
+        <div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.12em;font-family:var(--font-head)">Véhicule identifié</div>
+        <div style="font-family:var(--font-head);font-size:0.8rem;font-weight:800;color:var(--offwhite);text-transform:uppercase;letter-spacing:0.05em">${vehicule}</div>
+      </div>
+    </div>` : ''}
+    <div style="font-family:var(--font-head);font-size:0.55rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.2rem">Taille trouvée</div>
+    <div style="font-family:var(--font-head);font-size:1.4rem;font-weight:900;color:var(--gold)">${taille}</div>
+    <div style="font-size:0.65rem;color:var(--text-dim);margin-top:0.1rem">${label}</div>
+    <button onclick="applyTailleToForm()" style="margin-top:0.8rem;background:var(--gold);color:var(--black);border:none;padding:0.6rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;width:100%;min-height:40px">✓ Utiliser cette taille dans le formulaire</button>
+    <div style="margin-top:0.5rem;font-size:0.6rem;color:var(--text-dim);text-align:center">
+      💡 Vérifiez sur le flanc de votre pneu avant de commander
+    </div>
+  `;
+  el.style.display = 'block';
   document.getElementById('miniFLoading').style.display = 'none';
 }
 
@@ -2316,15 +2376,9 @@ async function rdvSearchPlaque() {
   document.getElementById('miniFLoading').style.display = 'block';
   document.getElementById('miniFResult').style.display = 'none';
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200,
-        messages: [{ role: 'user', content: `Taille de pneu la plus probable pour la plaque française "${plaque}". JSON uniquement: {"taille":"205/55 R16","label":"Estimation - ${plaque}"}` }] })
-    });
-    const d = await res.json();
-    const txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
+    const txt = await callAnthropic([{ role: 'user', content: `Pour la plaque française "${plaque}", déduis la marque, le modèle et la taille de pneu la plus probable. JSON uniquement sans markdown: {"taille":"205/55 R16","label":"Estimation plaque ${plaque}","vehicule":"Renault Clio 2018"}` }], 250);
     const r = JSON.parse(txt);
-    showMiniResult(r.taille, r.label);
+    showMiniResult(r.taille, r.label, r.vehicule || null);
   } catch(e) {
     showMiniResult('205/55 R16', 'Taille courante — à confirmer');
   }
@@ -2339,11 +2393,11 @@ async function rdvSearchVoiture() {
   document.getElementById('miniFResult').style.display = 'none';
   const key = `${marque}_${modele}_${annee}`;
   if (taillesPneus[key]) {
-    setTimeout(() => showMiniResult(taillesPneus[key].taille, `${marque} ${modele} ${annee} · Origine`), 400);
+    setTimeout(() => showMiniResult(taillesPneus[key].taille, `${marque} ${modele} ${annee} · Origine`, `${marque} ${modele} ${annee}`), 400);
     return;
   }
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch(ANTHROPIC_WORKER_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200,
         messages: [{ role: 'user', content: `Taille pneu origine ${marque} ${modele} ${annee}. JSON uniquement: {"taille":"205/55 R16","label":"${marque} ${modele} ${annee}"}` }] })
@@ -2351,9 +2405,9 @@ async function rdvSearchVoiture() {
     const d = await res.json();
     const txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
     const r = JSON.parse(txt);
-    showMiniResult(r.taille, r.label);
+    showMiniResult(r.taille, r.label, r.vehicule || null);
   } catch(e) {
-    showMiniResult('205/55 R16', `${marque} ${modele} ${annee} · À confirmer`);
+    showMiniResult('205/55 R16', `${marque} ${modele} ${annee} · À confirmer`, `${marque} ${modele} ${annee}`);
   }
 }
 
@@ -2366,7 +2420,7 @@ async function rdvHandlePhoto(e) {
     document.getElementById('miniFLoading').style.display = 'block';
     document.getElementById('miniFResult').style.display = 'none';
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch(ANTHROPIC_WORKER_URL, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300,
           messages: [{ role: 'user', content: [
@@ -2377,7 +2431,7 @@ async function rdvHandlePhoto(e) {
       const d = await res.json();
       const txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
       const r = JSON.parse(txt);
-      showMiniResult(r.taille, r.label);
+      showMiniResult(r.taille, r.label, r.vehicule || null);
     } catch(e) {
       showMiniResult('Non lisible', 'Appelez-nous : 02 40 50 70 24');
     }
@@ -2688,7 +2742,9 @@ async function rdvSearchPlaque2() {
     const annee  = dateStr ? dateStr.split('-').pop() : '';
     const tailleBrute = vehicle.res || vehicle.pneu_monte || vehicle.pneu || vehicle.pneumatique || '';
     const taillePneu  = tailleBrute.replace(/\s+CM(\d+)$/i, ' R$1').trim();
-    const vehiculeLabel = `${marque} ${modele}${version ? ' ' + version : ''} (${annee})`.trim();
+    const vehiculeLabel = (marque || modele)
+      ? `${[marque, modele, version].filter(Boolean).join(' ')}${annee ? ' (' + annee + ')' : ''}`.trim()
+      : null;
     if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
       showMiniResult2(taillePneu, "Taille d'origine", vehiculeLabel);
     } else {
@@ -2713,7 +2769,7 @@ async function rdvSearchVoiture2() {
     return;
   }
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch(ANTHROPIC_WORKER_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200,
         messages: [{ role: 'user', content: `Taille pneu origine ${marque} ${modele} ${annee}. JSON uniquement: {"taille":"205/55 R16","label":"${marque} ${modele} ${annee}"}` }] })
@@ -2733,7 +2789,7 @@ async function rdvHandlePhoto2(e) {
     document.getElementById('miniFLoading2').style.display = 'block';
     document.getElementById('miniFResult2').style.display = 'none';
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch(ANTHROPIC_WORKER_URL, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300,
           messages: [{ role: 'user', content: [
@@ -2786,6 +2842,15 @@ function toggleFaq(btn) {
   }
 }
 
+// === OPEN FULL TIRE FINDER ===
+function openFinderSection(e) {
+  e.stopPropagation(); // don't toggle mini-finder
+  const section = document.getElementById('tire-finder');
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
 // === REVEAL (IntersectionObserver) ===
 document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
 if ('IntersectionObserver' in window) {
@@ -2803,18 +2868,18 @@ window.addEventListener('scroll', () => {
   if (!ticking) {
     requestAnimationFrame(() => {
       let current = '';
-      document.querySelectorAll('section[id], div[id]').forEach(section => {
-        if (section.getBoundingClientRect().top <= 120) current = section.id;
+      document.querySelectorAll('sections').forEach(section => {
+        const rect = section.getBoundingClientRect();
+        if (rect.top <= 80 && rect.bottom >= 80) current = section.id;
       });
       navLinks.forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href') === '#' + current) link.classList.add('active');
+        link.classList.toggle('active', link.getAttribute('href') === '#' + current);
       });
       ticking = false;
     });
     ticking = true;
   }
-}, { passive: true });
+});
 </script>
 </body>
 </html>
