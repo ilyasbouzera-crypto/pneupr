@@ -330,15 +330,18 @@ nav {
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  overflow: hidden;
 }
 .nav-top {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 5vw; height: 72px; gap: 1rem;
+  position: relative; z-index: 2;
 }
 .logo {
   font-family: var(--font-head); font-size: 2rem; font-weight: 900;
   color: var(--offwhite); text-decoration: none; letter-spacing: 0.05em;
-  text-transform: uppercase; flex-shrink: 0;
+  text-transform: uppercase; flex-shrink: 0; min-width: fit-content;
+  position: relative; z-index: 10;
 }
 .logo span { color: var(--gold); }
 .nav-infos { display: flex; align-items: center; gap: 2rem; }
@@ -358,6 +361,7 @@ nav {
   background: var(--carbon); display: flex; align-items: center;
   padding: 0 5vw; height: 38px; border-top: 1px solid var(--border-dim);
   overflow-x: auto; scrollbar-width: none;
+  position: relative; z-index: 1;
 }
 .nav-bottom::-webkit-scrollbar { display: none; }
 .nav-bottom a {
@@ -973,7 +977,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
   .nav-top { height: 60px; padding: 0 1rem; }
   .logo { font-size: 1.6rem; }
 
-  /* HERO */
+  /* HERO — padding-top = hauteur nav mobile (60px) */
   #accueil { padding-top: 60px; min-height: auto; padding-bottom: 1rem; }
   .hero-inner { padding: 3rem 5vw 2rem; }
   .hero-left h1 { font-size: clamp(2.8rem, 11vw, 3.5rem); }
@@ -1116,7 +1120,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
       <span></span><span></span><span></span>
     </button>
   </div>
-  <nav class="nav-bottom" aria-label="Sections de la page">
+  <div class="nav-bottom" role="navigation" aria-label="Sections de la page">
     <a href="#contact">Prendre RDV</a>
     <a href="#services">Services</a>
     <a href="#tarifs">Tarifs</a>
@@ -1124,7 +1128,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
     <a href="#faq">FAQ</a>
     <a href="#avis">Avis</a>
     <a href="#apropos">À Propos</a>
-  </nav>
+  </div>
 </nav>
 
 <div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Menu de navigation" aria-hidden="true">
