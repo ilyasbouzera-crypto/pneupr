@@ -1981,6 +1981,123 @@ function showResult(containerId, data) {
 // Clé RapidAPI SIV — remplacez par votre clé après inscription sur rapidapi.com
 const RAPIDAPI_KEY = '7a1d7ee643msh49518d14aaa93a2p1738adjsnbc738be565b6';
 
+// Base de données locale tailles pneus par marque/modèle
+const taillesDB = {
+  // RENAULT
+  'RENAULT|CLIO': { '2019': '205/45 R17', '2018': '195/65 R15', '2017': '195/65 R15', '2016': '195/65 R15', '2015': '195/65 R15', '2014': '195/65 R15', '2013': '195/65 R15', '2012': '185/65 R15', default: '195/65 R15' },
+  'RENAULT|MEGANE': { '2022': '205/55 R16', '2021': '205/55 R16', '2020': '205/55 R16', '2019': '205/55 R16', '2016': '205/55 R16', default: '205/55 R16' },
+  'RENAULT|CAPTUR': { '2022': '215/55 R17', '2021': '215/55 R17', '2020': '215/55 R17', '2019': '215/55 R17', '2016': '205/60 R16', default: '205/60 R16' },
+  'RENAULT|ZOE': { default: '205/55 R16' },
+  'RENAULT|KADJAR': { default: '215/65 R16' },
+  'RENAULT|SCENIC': { default: '205/60 R16' },
+  'RENAULT|TWINGO': { default: '175/65 R14' },
+  'RENAULT|DUSTER': { default: '215/65 R16' },
+  'RENAULT|TRAFIC': { default: '215/65 R16' },
+  'RENAULT|KANGOO': { default: '195/65 R15' },
+  // PEUGEOT
+  'PEUGEOT|208': { '2019': '205/45 R17', '2020': '205/45 R17', '2021': '205/45 R17', '2022': '205/45 R17', default: '195/55 R16' },
+  'PEUGEOT|308': { '2021': '215/50 R17', '2022': '215/50 R17', default: '205/55 R16' },
+  'PEUGEOT|3008': { default: '225/55 R17' },
+  'PEUGEOT|5008': { default: '235/50 R18' },
+  'PEUGEOT|2008': { default: '205/55 R17' },
+  'PEUGEOT|508': { default: '225/45 R17' },
+  'PEUGEOT|EXPERT': { default: '215/65 R16' },
+  // CITROEN
+  'CITROEN|C3': { '2017': '195/55 R16', '2018': '195/55 R16', '2019': '195/55 R16', default: '185/65 R15' },
+  'CITROEN|C4': { '2020': '215/55 R17', '2021': '215/55 R17', default: '205/55 R16' },
+  'CITROEN|C5 AIRCROSS': { default: '215/60 R17' },
+  'CITROEN|BERLINGO': { default: '195/65 R15' },
+  'CITROEN|C3 AIRCROSS': { default: '205/60 R16' },
+  // VOLKSWAGEN
+  'VOLKSWAGEN|GOLF': { '2020': '225/40 R18', '2021': '225/40 R18', '2022': '225/40 R18', '2019': '205/55 R16', default: '205/55 R16' },
+  'VOLKSWAGEN|POLO': { default: '195/55 R16' },
+  'VOLKSWAGEN|TIGUAN': { default: '235/50 R18' },
+  'VOLKSWAGEN|PASSAT': { default: '215/55 R17' },
+  'VOLKSWAGEN|T-ROC': { default: '215/50 R18' },
+  'VOLKSWAGEN|TOUAREG': { default: '255/55 R18' },
+  'VOLKSWAGEN|CADDY': { default: '195/65 R15' },
+  // BMW
+  'BMW|SERIE 1': { default: '205/55 R16' },
+  'BMW|SERIE 3': { '2019': '225/45 R18', '2020': '225/45 R18', '2021': '225/45 R18', default: '205/55 R16' },
+  'BMW|SERIE 5': { default: '225/55 R17' },
+  'BMW|X1': { default: '225/55 R17' },
+  'BMW|X3': { default: '245/50 R19' },
+  'BMW|X5': { default: '255/50 R19' },
+  // MERCEDES
+  'MERCEDES|CLASSE A': { default: '225/45 R17' },
+  'MERCEDES|CLASSE C': { default: '225/45 R17' },
+  'MERCEDES|CLASSE E': { default: '225/55 R17' },
+  'MERCEDES|GLC': { default: '235/55 R18' },
+  'MERCEDES|CLA': { default: '225/45 R17' },
+  // AUDI
+  'AUDI|A3': { default: '215/45 R17' },
+  'AUDI|A4': { default: '225/50 R17' },
+  'AUDI|Q3': { default: '235/55 R18' },
+  'AUDI|Q5': { default: '235/60 R18' },
+  'AUDI|A1': { default: '195/55 R16' },
+  // TOYOTA
+  'TOYOTA|YARIS': { '2020': '195/50 R16', default: '185/65 R15' },
+  'TOYOTA|COROLLA': { default: '205/55 R16' },
+  'TOYOTA|C-HR': { default: '215/55 R18' },
+  'TOYOTA|RAV4': { default: '235/55 R18' },
+  'TOYOTA|AYGO': { default: '175/60 R14' },
+  // FORD
+  'FORD|FIESTA': { default: '195/50 R16' },
+  'FORD|FOCUS': { default: '205/55 R16' },
+  'FORD|PUMA': { default: '215/55 R17' },
+  'FORD|KUGA': { default: '235/50 R18' },
+  'FORD|TRANSIT': { default: '215/65 R16' },
+  // OPEL
+  'OPEL|CORSA': { default: '195/55 R16' },
+  'OPEL|ASTRA': { default: '205/55 R16' },
+  'OPEL|MOKKA': { default: '215/55 R17' },
+  // FIAT
+  'FIAT|500': { default: '185/55 R15' },
+  'FIAT|PANDA': { default: '175/65 R14' },
+  'FIAT|TIPO': { default: '195/65 R15' },
+  'FIAT|DUCATO': { default: '215/65 R16' },
+  // DACIA
+  'DACIA|SANDERO': { default: '195/55 R16' },
+  'DACIA|DUSTER': { default: '215/60 R17' },
+  'DACIA|LOGAN': { default: '185/65 R15' },
+  'DACIA|JOGGER': { default: '205/60 R16' },
+  // SKODA
+  'SKODA|OCTAVIA': { default: '205/55 R16' },
+  'SKODA|FABIA': { default: '185/65 R15' },
+  'SKODA|KODIAQ': { default: '235/55 R18' },
+  'SKODA|KAROQ': { default: '215/60 R17' },
+  // SEAT
+  'SEAT|IBIZA': { default: '195/55 R16' },
+  'SEAT|LEON': { default: '205/55 R16' },
+  'SEAT|ATECA': { default: '215/60 R17' },
+  // HYUNDAI
+  'HYUNDAI|I20': { default: '185/65 R15' },
+  'HYUNDAI|I30': { default: '205/55 R16' },
+  'HYUNDAI|TUCSON': { default: '225/55 R18' },
+  'HYUNDAI|KONA': { default: '215/55 R17' },
+  // KIA
+  'KIA|PICANTO': { default: '175/65 R14' },
+  'KIA|RIO': { default: '185/65 R15' },
+  'KIA|CEED': { default: '205/55 R16' },
+  'KIA|SPORTAGE': { default: '235/55 R18' },
+  // NISSAN
+  'NISSAN|MICRA': { default: '185/65 R15' },
+  'NISSAN|JUKE': { default: '215/55 R17' },
+  'NISSAN|QASHQAI': { default: '225/55 R17' },
+  'NISSAN|LEAF': { default: '205/55 R16' },
+};
+
+function findTailleFromDB(marque, modele, annee) {
+  // Normaliser
+  const m = (marque || '').toUpperCase().trim();
+  const mo = (modele || '').toUpperCase().trim();
+  const an = (annee || '').toString().trim();
+  const key = m + '|' + mo;
+  const entry = taillesDB[key];
+  if (!entry) return null;
+  return { taille: entry[an] || entry.default, marque: m, modele: mo, annee: an };
+}
+
 async function searchPlaque() {
   const plaque = document.getElementById('plaqueInput').value.trim().toUpperCase().replace(/\s+/g, '-');
   if (!plaque || plaque.length < 7) { alert('Veuillez entrer une plaque valide (ex: AB-123-CD)'); return; }
@@ -1989,8 +2106,7 @@ async function searchPlaque() {
   document.getElementById('plaqueResult').classList.remove('show');
 
   try {
-    // Appel API SIV réelle via RapidAPI
-    const res = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/plaqueimmatriculation?immatriculation=${encodeURIComponent(plaque)}&pays=FR`, {
+    const res = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/get-vehicule-info?token=TokenDemoRapidapi&host_name=https%3A%2F%2Fapiplaqueimmatriculation.com&immatriculation=${encodeURIComponent(plaque)}`, {
       method: 'GET',
       headers: {
         'x-rapidapi-host': 'api-plaque-immatriculation-siv.p.rapidapi.com',
@@ -1999,53 +2115,57 @@ async function searchPlaque() {
     });
 
     if (!res.ok) throw new Error('API error ' + res.status);
-    const vehicle = await res.json();
-    console.log('SIV API response:', JSON.stringify(vehicle)); // DEBUG
+    const json = await res.json();
+    const vehicle = json.data || json;
+    console.log('SIV API response:', JSON.stringify(vehicle));
 
-    // Extraire les infos du véhicule
-    const marque = vehicle.marque || vehicle.make || '';
-    const modele = vehicle.modele || vehicle.model || '';
-    const annee = vehicle.annee_sortie || vehicle.year || '';
-    const taillePneu = vehicle.pneu_monte || vehicle.tyre_size || vehicle.pneuAv || '';
-    const energie = vehicle.energie || vehicle.fuel || '';
+    // Champs exacts retournés par l'API
+    const marque  = vehicle.marque  || '';
+    const modele  = vehicle.modele  || vehicle.modele_en || '';
+    const version = vehicle.version || '';
+    const dateStr = vehicle.date1erCir_fr || vehicle.datelerCir_fr || vehicle.date1erCir_us || vehicle.datelerCir_us || '';
+    const annee   = dateStr ? dateStr.split('-').pop() : '';
+    // "res" est le champ taille de pneu (ex: "195/65 CM5" → on normalise en "195/65 R15")
+    const tailleBrute = vehicle.res || vehicle.pneu_monte || vehicle.pneu || vehicle.pneumatique || '';
+    const taillePneu  = tailleBrute.replace(/\s+CM(\d+)$/i, ' R$1').replace(/\s+R(\d+)\s*$/, ' R$1').trim();
+    const vehiculeLabel = `${marque} ${modele}${version ? ' ' + version : ''} (${annee})`.trim();
 
-    // Si l'API retourne directement la taille de pneu
+    // 1. L'API retourne directement la taille
     if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
       showResult('plaqueResult', {
         taille: taillePneu,
-        label: `${marque} ${modele} ${annee} — Taille d'origine`,
-        pression: '2.3 / 2.1 bar',
-        vehicule: `${marque} ${modele} (${annee})`
+        label: "Taille d'origine",
+        vehicule: vehiculeLabel,
+        pression: '2.3 / 2.1 bar'
       });
     } else {
-      // L'API a trouvé le véhicule mais pas la taille — on demande à Claude avec les vraies infos
-      const promptVehicle = `Taille de pneu d'origine pour ${marque} ${modele} ${annee} motorisation ${energie}. JSON uniquement: {"taille":"205/55 R16","alt":"195/65 R15","pression":"2.3 / 2.1 bar","label":"${marque} ${modele} ${annee}"}`;
-      const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200,
-          messages: [{ role: 'user', content: promptVehicle }] })
-      });
-      const d = await claudeRes.json();
-      const txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
-      const result = JSON.parse(txt);
-      result.vehicule = `${marque} ${modele} (${annee})`;
-      showResult('plaqueResult', result);
+      // 2. Cherche dans la base locale avec marque/modèle/année retournés
+      const found = findTailleFromDB(marque, modele, annee);
+      if (found) {
+        showResult('plaqueResult', {
+          taille: found.taille,
+          label: "Taille d'origine estimée",
+          vehicule: vehiculeLabel,
+          pression: '2.3 / 2.1 bar'
+        });
+      } else {
+        // 3. Véhicule trouvé mais taille inconnue
+        showResult('plaqueResult', {
+          taille: '—',
+          label: 'Appelez-nous avec le véhicule identifié',
+          vehicule: vehiculeLabel,
+          pression: ''
+        });
+      }
     }
-
   } catch(e) {
-    // Si clé non configurée, afficher un message utile
-    if (RAPIDAPI_KEY === 'VOTRE_CLE_RAPIDAPI_ICI') {
-      document.getElementById('plaqueResult').innerHTML = `
-        <div style="color:var(--gold);font-family:var(--font-head);font-size:0.8rem;margin-bottom:0.8rem">⚙️ Configuration requise</div>
-        <p style="color:var(--text-mid);font-size:0.78rem;line-height:1.7">Pour activer la recherche par plaque, inscrivez-vous sur <a href="https://rapidapi.com/api-plaque-immatriculation-siv-api-plaque-immatriculation-siv-default/api/api-plaque-immatriculation-siv" target="_blank" style="color:var(--gold)">RapidAPI</a> et remplacez <code>VOTRE_CLE_RAPIDAPI_ICI</code> dans le code.</p>
-        <p style="color:var(--text-dim);font-size:0.72rem;margin-top:0.8rem">En attendant, utilisez la recherche par véhicule ou appelez-nous.</p>
-        <div class="result-cta" style="margin-top:1rem">
-          <a href="tel:+33240507024" class="btn-gold" style="font-size:0.72rem;padding:0.7rem 1.5rem">📞 02 40 50 70 24</a>
-        </div>`;
-      document.getElementById('plaqueResult').classList.add('show');
-    } else {
-      showResult('plaqueResult', { taille: '—', label: 'Plaque non trouvée — appelez-nous pour confirmation', pression: '' });
-    }
+    document.getElementById('plaqueResult').innerHTML = `
+      <div style="color:var(--gold);font-family:var(--font-head);font-size:0.8rem;margin-bottom:0.8rem">⚠️ Plaque non trouvée</div>
+      <p style="color:var(--text-mid);font-size:0.78rem;line-height:1.7">Essayez la recherche par véhicule, ou appelez-nous directement.</p>
+      <div class="result-cta" style="margin-top:1rem">
+        <a href="tel:+33240507024" class="btn-gold" style="font-size:0.72rem;padding:0.7rem 1.5rem">📞 02 40 50 70 24</a>
+      </div>`;
+    document.getElementById('plaqueResult').classList.add('show');
   }
   document.getElementById('plaqueLoading').style.display = 'none';
 }
@@ -2503,19 +2623,21 @@ function switchMiniTab2(tab) {
 
 function showMiniResult2(taille, label, vehicule) {
   miniFTailleFound2 = taille;
-  document.getElementById('miniFTaille2').textContent = taille;
-  document.getElementById('miniFLabel2').textContent = label;
-  if (vehicule) {
-    let vEl = document.getElementById('miniFVehicule2');
-    if (!vEl) {
-      vEl = document.createElement('div');
-      vEl.id = 'miniFVehicule2';
-      vEl.style.cssText = 'font-family:var(--font-head);font-size:0.75rem;font-weight:800;color:var(--offwhite);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem';
-      document.getElementById('miniFTaille2').before(vEl);
-    }
-    vEl.textContent = '🚗 ' + vehicule;
-  }
-  document.getElementById('miniFResult2').style.display = 'block';
+  const el = document.getElementById('miniFResult2');
+  el.innerHTML = `
+    ${vehicule ? `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;padding-bottom:0.6rem;border-bottom:1px solid rgba(77,166,255,0.2)">
+      <span>🚗</span>
+      <div>
+        <div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.12em;font-family:var(--font-head)">Véhicule identifié</div>
+        <div style="font-family:var(--font-head);font-size:0.8rem;font-weight:800;color:var(--offwhite);text-transform:uppercase;letter-spacing:0.05em">${vehicule}</div>
+      </div>
+    </div>` : ''}
+    <div style="font-family:var(--font-head);font-size:0.55rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.2rem">Taille de pneu</div>
+    <div id="miniFTaille2" style="font-family:var(--font-head);font-size:1.6rem;font-weight:900;color:var(--gold)">${taille}</div>
+    <div id="miniFLabel2" style="font-size:0.65rem;color:var(--text-dim);margin-top:0.1rem">${label}</div>
+    <button onclick="applyTailleToForm2()" style="margin-top:0.8rem;background:var(--gold);color:var(--black);border:none;padding:0.6rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;width:100%;min-height:40px">✓ Utiliser cette taille dans le formulaire</button>
+  `;
+  el.style.display = 'block';
   document.getElementById('miniFLoading2').style.display = 'none';
 }
 
@@ -2552,28 +2674,26 @@ async function rdvSearchPlaque2() {
   document.getElementById('miniFLoading2').style.display = 'block';
   document.getElementById('miniFResult2').style.display = 'none';
   try {
-    const res = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/plaqueimmatriculation?immatriculation=${encodeURIComponent(plaque)}&pays=FR`, {
+    const res = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/get-vehicule-info?token=TokenDemoRapidapi&host_name=https%3A%2F%2Fapiplaqueimmatriculation.com&immatriculation=${encodeURIComponent(plaque)}`, {
       method: 'GET',
       headers: { 'x-rapidapi-host': 'api-plaque-immatriculation-siv.p.rapidapi.com', 'x-rapidapi-key': RAPIDAPI_KEY }
     });
     if (!res.ok) throw new Error('API error');
-    const vehicle = await res.json();
-    const marque = vehicle.marque || vehicle.make || '';
-    const modele = vehicle.modele || vehicle.model || '';
-    const annee = vehicle.annee_sortie || vehicle.year || '';
-    const taillePneu = vehicle.pneu_monte || vehicle.tyre_size || vehicle.pneuAv || '';
+    const json = await res.json();
+    const vehicle = json.data || json;
+    const marque = vehicle.marque || '';
+    const modele = vehicle.modele || vehicle.modele_en || '';
+    const version = vehicle.version || '';
+    const dateStr = vehicle.date1erCir_fr || vehicle.datelerCir_fr || vehicle.date1erCir_us || vehicle.datelerCir_us || '';
+    const annee  = dateStr ? dateStr.split('-').pop() : '';
+    const tailleBrute = vehicle.res || vehicle.pneu_monte || vehicle.pneu || vehicle.pneumatique || '';
+    const taillePneu  = tailleBrute.replace(/\s+CM(\d+)$/i, ' R$1').trim();
+    const vehiculeLabel = `${marque} ${modele}${version ? ' ' + version : ''} (${annee})`.trim();
     if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
-      showMiniResult2(taillePneu, `Taille d'origine`, `${marque} ${modele} ${annee}`);
+      showMiniResult2(taillePneu, "Taille d'origine", vehiculeLabel);
     } else {
-      const cRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200,
-          messages: [{ role: 'user', content: `Taille pneu origine ${marque} ${modele} ${annee}. JSON uniquement: {"taille":"205/55 R16","label":"${marque} ${modele} ${annee}"}` }] })
-      });
-      const d = await cRes.json();
-      const txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
-      const r = JSON.parse(txt);
-      showMiniResult2(r.taille, r.label, `${marque} ${modele} ${annee}`);
+      const found = findTailleFromDB(marque, modele, annee);
+      showMiniResult2(found ? found.taille : '—', found ? "Taille estimée" : 'Appelez-nous', vehiculeLabel);
     }
   } catch(e) {
     showMiniResult2('Non trouvé', 'Appelez-nous : 02 40 50 70 24');
