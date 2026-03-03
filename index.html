@@ -1953,6 +1953,14 @@ function formatPlaque(input) {
 function showResult(containerId, data) {
   const el = document.getElementById(containerId);
   el.innerHTML = `
+    ${data.vehicule ? `
+    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border-dim)">
+      <span style="font-size:1.4rem">🚗</span>
+      <div>
+        <div style="font-family:var(--font-head);font-size:0.6rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase">Véhicule identifié</div>
+        <div style="font-family:var(--font-head);font-size:1rem;font-weight:800;color:var(--offwhite);letter-spacing:0.05em;text-transform:uppercase">${data.vehicule}</div>
+      </div>
+    </div>` : ''}
     <div class="result-size">${data.taille}</div>
     <div class="result-label">${data.label || 'Taille recommandée'}</div>
     ${data.alt ? `<div style="margin-bottom:1rem;font-size:0.78rem;color:var(--text-dim)">Alternative : <span style="color:var(--gold);font-family:var(--font-head);font-weight:700">${data.alt}</span></div>` : ''}
@@ -1970,22 +1978,74 @@ function showResult(containerId, data) {
   el.classList.add('show');
 }
 
+// Clé RapidAPI SIV — remplacez par votre clé après inscription sur rapidapi.com
+const RAPIDAPI_KEY = '7a1d7ee643msh49518d14aaa93a2p1738adjsnbc738be565b6';
+
 async function searchPlaque() {
-  const plaque = document.getElementById('plaqueInput').value.trim();
+  const plaque = document.getElementById('plaqueInput').value.trim().toUpperCase().replace(/\s+/g, '-');
   if (!plaque || plaque.length < 7) { alert('Veuillez entrer une plaque valide (ex: AB-123-CD)'); return; }
+
   document.getElementById('plaqueLoading').style.display = 'block';
   document.getElementById('plaqueResult').classList.remove('show');
+
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400,
-        messages: [{ role: 'user', content: `Pour un véhicule avec la plaque française "${plaque}", donne les dimensions de pneus d'origine les plus probables. Réponds UNIQUEMENT en JSON sans markdown: {"taille":"205/55 R16","alt":"195/65 R15","pression":"2.3 / 2.1 bar","label":"Taille estimée - plaque ${plaque}"}` }] })
+    // Appel API SIV réelle via RapidAPI
+    const res = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/plaqueimmatriculation?immatriculation=${encodeURIComponent(plaque)}&pays=FR`, {
+      method: 'GET',
+      headers: {
+        'x-rapidapi-host': 'api-plaque-immatriculation-siv.p.rapidapi.com',
+        'x-rapidapi-key': RAPIDAPI_KEY
+      }
     });
-    const d = await res.json();
-    let txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
-    showResult('plaqueResult', JSON.parse(txt));
+
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const vehicle = await res.json();
+    console.log('SIV API response:', JSON.stringify(vehicle)); // DEBUG
+
+    // Extraire les infos du véhicule
+    const marque = vehicle.marque || vehicle.make || '';
+    const modele = vehicle.modele || vehicle.model || '';
+    const annee = vehicle.annee_sortie || vehicle.year || '';
+    const taillePneu = vehicle.pneu_monte || vehicle.tyre_size || vehicle.pneuAv || '';
+    const energie = vehicle.energie || vehicle.fuel || '';
+
+    // Si l'API retourne directement la taille de pneu
+    if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
+      showResult('plaqueResult', {
+        taille: taillePneu,
+        label: `${marque} ${modele} ${annee} — Taille d'origine`,
+        pression: '2.3 / 2.1 bar',
+        vehicule: `${marque} ${modele} (${annee})`
+      });
+    } else {
+      // L'API a trouvé le véhicule mais pas la taille — on demande à Claude avec les vraies infos
+      const promptVehicle = `Taille de pneu d'origine pour ${marque} ${modele} ${annee} motorisation ${energie}. JSON uniquement: {"taille":"205/55 R16","alt":"195/65 R15","pression":"2.3 / 2.1 bar","label":"${marque} ${modele} ${annee}"}`;
+      const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200,
+          messages: [{ role: 'user', content: promptVehicle }] })
+      });
+      const d = await claudeRes.json();
+      const txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
+      const result = JSON.parse(txt);
+      result.vehicule = `${marque} ${modele} (${annee})`;
+      showResult('plaqueResult', result);
+    }
+
   } catch(e) {
-    showResult('plaqueResult', { taille: '205/55 R16', alt: '195/65 R15', pression: '2.3 / 2.1 bar', label: 'Taille courante — appelez-nous pour confirmation' });
+    // Si clé non configurée, afficher un message utile
+    if (RAPIDAPI_KEY === 'VOTRE_CLE_RAPIDAPI_ICI') {
+      document.getElementById('plaqueResult').innerHTML = `
+        <div style="color:var(--gold);font-family:var(--font-head);font-size:0.8rem;margin-bottom:0.8rem">⚙️ Configuration requise</div>
+        <p style="color:var(--text-mid);font-size:0.78rem;line-height:1.7">Pour activer la recherche par plaque, inscrivez-vous sur <a href="https://rapidapi.com/api-plaque-immatriculation-siv-api-plaque-immatriculation-siv-default/api/api-plaque-immatriculation-siv" target="_blank" style="color:var(--gold)">RapidAPI</a> et remplacez <code>VOTRE_CLE_RAPIDAPI_ICI</code> dans le code.</p>
+        <p style="color:var(--text-dim);font-size:0.72rem;margin-top:0.8rem">En attendant, utilisez la recherche par véhicule ou appelez-nous.</p>
+        <div class="result-cta" style="margin-top:1rem">
+          <a href="tel:+33240507024" class="btn-gold" style="font-size:0.72rem;padding:0.7rem 1.5rem">📞 02 40 50 70 24</a>
+        </div>`;
+      document.getElementById('plaqueResult').classList.add('show');
+    } else {
+      showResult('plaqueResult', { taille: '—', label: 'Plaque non trouvée — appelez-nous pour confirmation', pression: '' });
+    }
   }
   document.getElementById('plaqueLoading').style.display = 'none';
 }
@@ -2441,10 +2501,20 @@ function switchMiniTab2(tab) {
   document.getElementById('mini-panel-' + tab + '2').classList.add('active');
 }
 
-function showMiniResult2(taille, label) {
+function showMiniResult2(taille, label, vehicule) {
   miniFTailleFound2 = taille;
   document.getElementById('miniFTaille2').textContent = taille;
   document.getElementById('miniFLabel2').textContent = label;
+  if (vehicule) {
+    let vEl = document.getElementById('miniFVehicule2');
+    if (!vEl) {
+      vEl = document.createElement('div');
+      vEl.id = 'miniFVehicule2';
+      vEl.style.cssText = 'font-family:var(--font-head);font-size:0.75rem;font-weight:800;color:var(--offwhite);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem';
+      document.getElementById('miniFTaille2').before(vEl);
+    }
+    vEl.textContent = '🚗 ' + vehicule;
+  }
   document.getElementById('miniFResult2').style.display = 'block';
   document.getElementById('miniFLoading2').style.display = 'none';
 }
@@ -2477,21 +2547,37 @@ function rdvUpdateAnnees2() {
 }
 
 async function rdvSearchPlaque2() {
-  const plaque = document.getElementById('rdvPlaqueInput2').value.trim();
+  const plaque = document.getElementById('rdvPlaqueInput2').value.trim().toUpperCase().replace(/\s+/g, '-');
   if (!plaque || plaque.length < 7) { alert('Plaque invalide (ex: AB-123-CD)'); return; }
   document.getElementById('miniFLoading2').style.display = 'block';
   document.getElementById('miniFResult2').style.display = 'none';
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200,
-        messages: [{ role: 'user', content: `Taille de pneu la plus probable pour la plaque française "${plaque}". JSON uniquement: {"taille":"205/55 R16","label":"Estimation - ${plaque}"}` }] })
+    const res = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/plaqueimmatriculation?immatriculation=${encodeURIComponent(plaque)}&pays=FR`, {
+      method: 'GET',
+      headers: { 'x-rapidapi-host': 'api-plaque-immatriculation-siv.p.rapidapi.com', 'x-rapidapi-key': RAPIDAPI_KEY }
     });
-    const d = await res.json();
-    const txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
-    const r = JSON.parse(txt);
-    showMiniResult2(r.taille, r.label);
-  } catch(e) { showMiniResult2('205/55 R16', 'Taille courante — à confirmer'); }
+    if (!res.ok) throw new Error('API error');
+    const vehicle = await res.json();
+    const marque = vehicle.marque || vehicle.make || '';
+    const modele = vehicle.modele || vehicle.model || '';
+    const annee = vehicle.annee_sortie || vehicle.year || '';
+    const taillePneu = vehicle.pneu_monte || vehicle.tyre_size || vehicle.pneuAv || '';
+    if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
+      showMiniResult2(taillePneu, `Taille d'origine`, `${marque} ${modele} ${annee}`);
+    } else {
+      const cRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200,
+          messages: [{ role: 'user', content: `Taille pneu origine ${marque} ${modele} ${annee}. JSON uniquement: {"taille":"205/55 R16","label":"${marque} ${modele} ${annee}"}` }] })
+      });
+      const d = await cRes.json();
+      const txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
+      const r = JSON.parse(txt);
+      showMiniResult2(r.taille, r.label, `${marque} ${modele} ${annee}`);
+    }
+  } catch(e) {
+    showMiniResult2('Non trouvé', 'Appelez-nous : 02 40 50 70 24');
+  }
 }
 
 async function rdvSearchVoiture2() {
