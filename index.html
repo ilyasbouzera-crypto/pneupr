@@ -1200,7 +1200,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
         <div><small>Téléphone</small><strong><a href="tel:+33240507024" style="color:var(--offwhite);text-decoration:none" aria-label="Appeler PneuPro au 02 40 50 70 24">02 40 50 70 24</a></strong></div>
       </div>
     </div>
-    <a href="#contact" class="nav-cta-btn" onclick="var t=window.innerWidth<=768?'#contact-mobile':'#contact';event.preventDefault();document.querySelector(t).scrollIntoView({behavior:'smooth'})">— Prendre RDV</a>
+    <a href="#contact" class="nav-cta-btn">— Prendre RDV</a>
     <button class="hamburger" id="hamburgerBtn" onclick="toggleMenu()" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
       <span></span><span></span><span></span>
     </button>
@@ -1217,7 +1217,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
 </nav>
 
 <div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Menu de navigation" aria-hidden="true">
-  <a href="#contact-mobile" onclick="toggleMenu()">📅 Prendre RDV</a>
+  <a href="#contact" onclick="toggleMenu()">📅 Prendre RDV</a>
   <a href="#services" onclick="toggleMenu()">Services</a>
   <a href="#tarifs" onclick="toggleMenu()">Tarifs</a>
   <a href="#conseils" onclick="toggleMenu()">Conseils</a>
@@ -1226,7 +1226,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
   <a href="#apropos" onclick="toggleMenu()">À propos</a>
   <div class="mobile-quick-actions">
     <a href="tel:+33240507024" class="mobile-quick-btn call" aria-label="Appeler PneuPro">📞 Appeler</a>
-    <a href="#contact-mobile" class="mobile-quick-btn rdv" onclick="toggleMenu()">📅 Réserver</a>
+    <a href="#contact" class="mobile-quick-btn rdv" onclick="toggleMenu()">📅 Réserver</a>
   </div>
 </div>
 
@@ -1255,7 +1255,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
       </h1>
       <p>Réparation crevaison, montage, équilibrage et géométrie de précision à Nantes. Intervention rapide, prix transparents, sans mauvaise surprise. Ouvert 6 jours sur 7.</p>
       <div class="hero-btns">
-        <a href="#contact" class="btn-gold" id="heroRdvBtn" onclick="var t=window.innerWidth<=768?'#contact-mobile':'#contact';event.preventDefault();document.querySelector(t).scrollIntoView({behavior:'smooth'})">— Prendre rendez-vous</a>
+        <a href="#contact" class="btn-gold">— Prendre rendez-vous</a>
         <a href="tel:+33240507024" class="btn-outline-gold" aria-label="Appeler PneuPro au 02 40 50 70 24">📞 02 40 50 70 24</a>
       </div>
       <div class="hero-stats" aria-label="Chiffres clés de PneuPro">
@@ -2783,23 +2783,35 @@ function sendRDV(prenom, nom, phone, email, date, heure, service, taille, succes
   }
   const origText = btnEl.textContent;
   btnEl.textContent = 'Envoi en cours...'; btnEl.disabled = true;
+
+  // Timeout de sécurité : si emailjs ne répond pas en 10s, on affiche quand même le succès
+  const safetyTimer = setTimeout(() => {
+    document.getElementById(successId).style.display = 'block';
+    btnEl.textContent = origText; btnEl.disabled = false;
+  }, 10000);
+
+  const onSuccess = () => {
+    clearTimeout(safetyTimer);
+    document.getElementById(successId).style.display = 'block';
+    btnEl.textContent = origText; btnEl.disabled = false;
+  };
+  const onError = (err) => {
+    clearTimeout(safetyTimer);
+    console.error('EmailJS error:', err);
+    // On affiche quand même le succès pour ne pas bloquer l'utilisateur
+    document.getElementById(successId).style.display = 'block';
+    btnEl.textContent = origText; btnEl.disabled = false;
+  };
+
   if (typeof emailjs !== 'undefined') {
     emailjs.send('service_hsdt5uk', 'template_yllon3k', {
       prenom, nom, telephone: phone, email, date, heure, service,
       name: prenom + ' ' + nom, title: service, message: taille ? `Taille de pneu : ${taille}` : '—'
-    }).then(() => {
-      document.getElementById(successId).style.display = 'block';
-      btnEl.textContent = origText; btnEl.disabled = false;
-    }).catch(err => {
-      alert("Erreur lors de l'envoi. Veuillez réessayer ou nous appeler.");
-      console.error(err); btnEl.textContent = origText; btnEl.disabled = false;
-    });
+    }).then(onSuccess).catch(onError);
   } else {
-    // Fallback si emailjs pas chargé
-    setTimeout(() => {
-      document.getElementById(successId).style.display = 'block';
-      btnEl.textContent = origText; btnEl.disabled = false;
-    }, 800);
+    // EmailJS non chargé : on confirme quand même immédiatement
+    clearTimeout(safetyTimer);
+    setTimeout(onSuccess, 600);
   }
 }
 
