@@ -2145,20 +2145,33 @@ async function searchPlaque() {
   document.getElementById('plaqueResult').classList.remove('show');
 
   try {
-    const res = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/get-vehicule-info?token=TokenDemoRapidapi&host_name=https%3A%2F%2Fapiplaqueimmatriculation.com&immatriculation=${encodeURIComponent(plaque)}`, {
-      method: 'GET',
-      headers: {
-        'x-rapidapi-host': 'api-plaque-immatriculation-siv.p.rapidapi.com',
-        'x-rapidapi-key': RAPIDAPI_KEY
+    // Essai 1 : endpoint direct apiplaqueimmatriculation.com (token démo gratuit)
+    let json = null;
+    try {
+      const res1 = await fetch(`https://api.apiplaqueimmatriculation.com/plaque?immatriculation=${encodeURIComponent(plaque)}&token=TokenDemo2026B&pays=FR`, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (res1.ok) {
+        const j1 = await res1.json();
+        console.log('API directe response:', JSON.stringify(j1));
+        if (j1.data && j1.data.marque) json = j1;
       }
-    });
+    } catch(e1) { console.warn('API directe échouée:', e1.message); }
 
-    if (res.status === 429) throw new Error('RATE_LIMIT');
-    if (!res.ok) throw new Error('API error ' + res.status);
-    const json = await res.json();
-    console.log('SIV API response:', JSON.stringify(json));
-    // L'API retourne parfois {"erreur":"..."} avec status 200
-    if (json.erreur && !json.marque) throw new Error('Plaque inconnue: ' + json.erreur);
+    // Essai 2 : RapidAPI (fallback)
+    if (!json) {
+      const res2 = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/get-vehicule-info?token=TokenDemoRapidapi&host_name=https%3A%2F%2Fapiplaqueimmatriculation.com&immatriculation=${encodeURIComponent(plaque)}`, {
+        method: 'GET',
+        headers: { 'x-rapidapi-host': 'api-plaque-immatriculation-siv.p.rapidapi.com', 'x-rapidapi-key': RAPIDAPI_KEY }
+      });
+      if (res2.status === 429) throw new Error('RATE_LIMIT');
+      if (!res2.ok) throw new Error('API error ' + res2.status);
+      json = await res2.json();
+      console.log('RapidAPI response:', JSON.stringify(json));
+    }
+
+    if (!json || (json.data?.erreur && !json.data?.marque) || (json.erreur && !json.marque)) throw new Error('Plaque inconnue');
     const vehicle = json.data || json;
 
     // Champs exacts retournés par l'API SIV
