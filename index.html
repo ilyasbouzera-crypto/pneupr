@@ -2145,30 +2145,33 @@ async function searchPlaque() {
   document.getElementById('plaqueResult').classList.remove('show');
 
   try {
-    // Essai 1 : endpoint direct apiplaqueimmatriculation.com (token démo gratuit)
+    // Essai 1 : RapidAPI
     let json = null;
     try {
-      const res1 = await fetch(`https://api.apiplaqueimmatriculation.com/plaque?immatriculation=${encodeURIComponent(plaque)}&token=TokenDemo2026B&pays=FR`, {
-        method: 'POST',
-        headers: { 'Accept': 'application/json' }
-      });
-      if (res1.ok) {
-        const j1 = await res1.json();
-        console.log('API directe response:', JSON.stringify(j1));
-        if (j1.data && j1.data.marque) json = j1;
-      }
-    } catch(e1) { console.warn('API directe échouée:', e1.message); }
-
-    // Essai 2 : RapidAPI (fallback)
-    if (!json) {
-      const res2 = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/get-vehicule-info?token=TokenDemoRapidapi&host_name=https%3A%2F%2Fapiplaqueimmatriculation.com&immatriculation=${encodeURIComponent(plaque)}`, {
+      const res1 = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/get-vehicule-info?token=TokenDemoRapidapi&host_name=https%3A%2F%2Fapiplaqueimmatriculation.com&immatriculation=${encodeURIComponent(plaque)}`, {
         method: 'GET',
         headers: { 'x-rapidapi-host': 'api-plaque-immatriculation-siv.p.rapidapi.com', 'x-rapidapi-key': RAPIDAPI_KEY }
       });
-      if (res2.status === 429) throw new Error('RATE_LIMIT');
-      if (!res2.ok) throw new Error('API error ' + res2.status);
-      json = await res2.json();
-      console.log('RapidAPI response:', JSON.stringify(json));
+      if (res1.ok) {
+        const j1 = await res1.json();
+        console.log('RapidAPI response:', JSON.stringify(j1));
+        if (j1.marque || (j1.data && j1.data.marque)) json = j1;
+      }
+    } catch(e1) { console.warn('RapidAPI échouée:', e1.message); }
+
+    // Essai 2 : Worker Cloudflare → proxy vers apiplaqueimmatriculation.com (pas de CORS)
+    if (!json) {
+      try {
+        const sivUrl = `https://api.apiplaqueimmatriculation.com/plaque?immatriculation=${encodeURIComponent(plaque)}&token=TokenDemo2026B&pays=FR`;
+        const res2 = await fetch(ANTHROPIC_WORKER_URL + '?proxy=' + encodeURIComponent(sivUrl), {
+          method: 'GET'
+        });
+        if (res2.ok) {
+          const j2 = await res2.json();
+          console.log('Worker/SIV response:', JSON.stringify(j2));
+          if (j2.data && j2.data.marque) json = j2;
+        }
+      } catch(e2) { console.warn('Worker SIV échoué:', e2.message); }
     }
 
     if (!json || (json.data?.erreur && !json.data?.marque) || (json.erreur && !json.marque)) throw new Error('Plaque inconnue');
