@@ -1971,11 +1971,50 @@ function showResult(containerId, data) {
       <div class="result-info-item"><strong>Rapport h/l</strong><span>${data.taille.split('/')[1].split(' ')[0]}%</span></div>
       <div class="result-info-item"><strong>Diamètre</strong><span>${data.taille.split('R')[1] || '—'}"</span></div>` : ''}
     </div>
+    ${data.taille && data.taille !== '—' ? `
+    <button onclick="utilisierTaille('${data.taille}')" style="width:100%;margin-bottom:0.8rem;background:var(--gold);color:var(--black);border:none;padding:0.75rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem">
+      ✓ Utiliser cette taille dans le formulaire
+    </button>` : ''}
     <div class="result-cta">
       <a href="#contact" class="btn-gold" style="font-size:0.72rem;padding:0.7rem 1.5rem">→ Prendre RDV</a>
       <a href="tel:+33240507024" class="btn-outline-gold" style="font-size:0.72rem;padding:0.7rem 1.5rem" aria-label="Appeler PneuPro">📞 Appeler</a>
     </div>`;
   el.classList.add('show');
+}
+
+// Injecter la taille dans le formulaire RDV et scroller dessus
+function utilisierTaille(taille) {
+  // Formulaire desktop
+  const input1 = document.getElementById('taillePneu');
+  const group1 = document.getElementById('taille-group');
+  if (input1) {
+    input1.value = taille;
+    if (group1) group1.style.display = 'flex';
+    const svc1 = document.getElementById('service');
+    if (svc1 && !svc1.value) svc1.value = 'Changement de pneus';
+  }
+  // Formulaire mobile
+  const input2 = document.getElementById('taillePneu2');
+  const group2 = document.getElementById('taille-group2');
+  if (input2) {
+    input2.value = taille;
+    if (group2) group2.style.display = 'flex';
+    const svc2 = document.getElementById('service2');
+    if (svc2 && !svc2.value) svc2.value = 'Changement de pneus';
+  }
+  // Scroller vers le formulaire
+  const form = document.getElementById('contact') || document.getElementById('contact-mobile');
+  if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Feedback visuel
+  const btn = event.target.closest('button');
+  if (btn) {
+    btn.textContent = '✅ Taille ajoutée au formulaire !';
+    btn.style.background = '#4ade80';
+    setTimeout(() => {
+      btn.textContent = '✓ Utiliser cette taille dans le formulaire';
+      btn.style.background = 'var(--gold)';
+    }, 2500);
+  }
 }
 
 // Clé RapidAPI SIV — remplacez par votre clé après inscription sur rapidapi.com
