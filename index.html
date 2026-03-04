@@ -1012,30 +1012,38 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
   .nav-top { height: 60px; padding: 0 1rem; }
   .logo { font-size: 1.6rem; }
 
-  /* HERO — padding-top = hauteur nav mobile (60px) */
-  #accueil { padding-top: 60px; min-height: auto; padding-bottom: 1rem; }
-  .hero-inner { padding: 3rem 5vw 2rem; }
-  .hero-left h1 { font-size: clamp(2.8rem, 11vw, 3.5rem); }
-  .hero-left p { font-size: 0.88rem; }
-  .hero-btns { flex-direction: column; }
-  .btn-gold, .btn-outline-gold { justify-content: center; text-align: center; }
-  .hero-stats { flex-direction: column; }
-  .stat-item { border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; justify-content: center; gap: 1rem; padding: 1rem; }
-  .stat-item:last-child { border-bottom: none; }
-  .stat-num { font-size: 2rem; }
-  .slide-dots { bottom: 1rem; }
+  /* HERO */
+  #accueil { padding-top: 60px; min-height: auto; padding-bottom: 0; }
+  .hero-inner { padding: 1.8rem 1.2rem 1.5rem; }
+  .hero-left h1 { font-size: clamp(2.4rem, 10vw, 3rem); margin-bottom: 1rem; }
+  .hero-left p { font-size: 0.85rem; margin-bottom: 1.2rem; line-height: 1.6; }
+  .hero-badge-top { margin-bottom: 1rem; }
+  .hero-btns { flex-direction: column; gap: 0.6rem; margin-bottom: 1.5rem; }
+  .btn-gold, .btn-outline-gold { justify-content: center; text-align: center; padding: 0.75rem 1.5rem; }
+  .hero-btns .btn-outline-gold { display: none; }
+  .hero-stats { flex-direction: row; flex-wrap: wrap; }
+  .stat-item { flex: 1; min-width: 80px; border-right: 1px solid var(--border); border-bottom: none; padding: 0.7rem 0.5rem; }
+  .stat-item:last-child { border-right: none; }
+  .stat-num { font-size: 1.6rem; }
+  .stat-label { font-size: 0.5rem; }
+  .slide-dots { bottom: 0.5rem; }
 
   /* SECTIONS */
-  section { padding: 3.5rem 1.2rem; }
-  .section-title { font-size: clamp(1.8rem, 8vw, 2.5rem); }
-  .tips-section { padding: 1.5rem 1.2rem; }
+  section { padding: 2.2rem 1.2rem; }
+  .section-title { font-size: clamp(1.6rem, 7vw, 2.2rem); margin-bottom: 0.5rem; }
+  .section-eyebrow { margin-bottom: 0.3rem; }
+  .section-sub { font-size: 0.82rem; margin-bottom: 1.2rem !important; line-height: 1.6; }
+  .tips-section { padding: 1rem 1.2rem; margin-top: 1.5rem; }
 
   /* SERVICES */
-  .services-grid { grid-template-columns: 1fr; }
-  .service-card { padding: 1.5rem 1.2rem; }
+  .services-grid { grid-template-columns: 1fr; gap: 0.7rem; }
+  .services-header { margin-bottom: 1.5rem; }
+  .service-card { padding: 1.1rem 1rem; }
+  .service-icon { font-size: 1.2rem; margin-bottom: 0.5rem; }
+  .service-name { font-size: 0.9rem; margin-bottom: 0.3rem; }
 
   /* TARIFS */
-  .tarifs-layout { gap: 1.5rem; }
+  .tarifs-layout { gap: 1rem; }
 
   /* FINDER */
   .finder-tabs { flex-direction: column; }
@@ -1043,37 +1051,40 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
   .finder-tab:last-child { border-bottom: none; }
   .finder-input-group { flex-direction: column; }
   .finder-input, .finder-select { min-width: auto; }
-  .photo-drop { padding: 2rem 1rem; }
+  .photo-drop { padding: 1.2rem 1rem; }
 
   /* RDV MOBILE */
   .time-slots { grid-template-columns: repeat(3,1fr); }
   .rdv-row { grid-template-columns: 1fr; }
-  .rdv-card { padding: 1.5rem 1rem; }
+  .rdv-card { padding: 1.2rem 1rem; }
 
   /* FAQ */
-  .faq-layout { gap: 1.5rem; }
-  .faq-q { font-size: 0.82rem; padding: 1rem; }
-  .faq-a { padding: 0 1rem; }
-  .faq-item.open .faq-a { padding: 0 1rem 1rem; }
+  .faq-layout { gap: 1rem; }
+  .faq-q { font-size: 0.82rem; padding: 0.85rem 1rem; }
+  .faq-a { padding: 0 1rem; font-size: 0.82rem; }
+  .faq-item.open .faq-a { padding: 0 1rem 0.85rem; }
 
   /* AVIS */
-  .avis-grid { grid-template-columns: 1fr; }
-  .avis-header { flex-direction: column; align-items: flex-start; }
+  .avis-grid { grid-template-columns: 1fr; gap: 0.8rem; }
+  .avis-card:nth-child(n+4) { display: none; }
+  .avis-header { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
   .avis-score-wrap { width: 100%; }
 
-  /* FOOTER */
-  .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
-  footer { padding: 3rem 1.2rem calc(2rem + 80px); }
-
-  /* APROPOS — désactiver parallax sur mobile (iOS) */
+  /* APROPOS */
   #apropos { background-attachment: scroll; }
+  .apropos-visual { aspect-ratio: 16/5; }
 
   /* TEAM */
-  .team-grid { grid-template-columns: 1fr 1fr; }
+  .team-grid { grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+  .team-member:nth-child(n+5) { display: none; }
 
   /* MAP */
-  #localisation { height: 300px; }
-  .map-overlay { bottom: 0.8rem; left: 0.8rem; padding: 0.7rem 1rem; }
+  #localisation { height: 220px; }
+  .map-overlay { bottom: 0.8rem; left: 0.8rem; padding: 0.6rem 0.8rem; }
+
+  /* FOOTER */
+  .footer-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+  footer { padding: 2rem 1.2rem calc(1.5rem + 80px); }
 
   /* HIDE DESKTOP FLOAT BTN */
   .float-btns { display: none; }
