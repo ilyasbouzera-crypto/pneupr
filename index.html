@@ -1014,8 +1014,12 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
 
   /* HERO */
   #accueil { padding-top: 60px; min-height: auto; padding-bottom: 0; }
-  .hero-inner { padding: 1.8rem 1.2rem 1.5rem; }
-  .hero-left h1 { font-size: clamp(2.4rem, 10vw, 3rem); margin-bottom: 1rem; }
+  .hero-inner {
+    padding: 1.8rem 1.2rem 1.5rem;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .hero-left h1 { font-size: clamp(2.2rem, 10vw, 2.8rem); margin-bottom: 1rem; }
   .hero-left p { font-size: 0.85rem; margin-bottom: 1.2rem; line-height: 1.6; }
   .hero-badge-top { margin-bottom: 1rem; }
   .hero-btns { flex-direction: column; gap: 0.6rem; margin-bottom: 1.5rem; }
@@ -1043,7 +1047,8 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
   .service-name { font-size: 0.9rem; margin-bottom: 0.3rem; }
 
   /* TARIFS */
-  .tarifs-layout { gap: 1rem; }
+  .tarifs-layout { grid-template-columns: 1fr; gap: 1.5rem; }
+  .tarifs-side { position: static; }
 
   /* FINDER */
   .finder-tabs { flex-direction: column; }
@@ -1059,10 +1064,14 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
   .rdv-card { padding: 1.2rem 1rem; }
 
   /* FAQ */
-  .faq-layout { gap: 1rem; }
+  .faq-layout { grid-template-columns: 1fr; gap: 1.5rem; }
+  .faq-left { position: static; }
   .faq-q { font-size: 0.82rem; padding: 0.85rem 1rem; }
   .faq-a { padding: 0 1rem; font-size: 0.82rem; }
   .faq-item.open .faq-a { padding: 0 1rem 0.85rem; }
+
+  /* CONSEILS */
+  .tires-grid { grid-template-columns: 1fr; }
 
   /* AVIS */
   .avis-grid { grid-template-columns: 1fr; gap: 0.8rem; }
@@ -1099,6 +1108,10 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
   /* Mini finder mobile */
   .mini-tabs { flex-direction: column; gap: 0.3rem; }
   .mini-tab { min-height: 44px; }
+
+  /* Overflow protection */
+  html, body { overflow-x: hidden; max-width: 100vw; }
+  img, video, iframe { max-width: 100%; }
 }
 
 /* ═══════════════════════════════════════
