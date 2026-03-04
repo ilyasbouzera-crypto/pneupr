@@ -2426,15 +2426,58 @@ function rdvUpdateAnnees() {
   if (marque && modele && catalogueVehicules[marque]?.[modele]) catalogueVehicules[marque][modele].forEach(a => anneeEl.innerHTML += `<option>${a}</option>`);
 }
 
+// ── Fonction SIV partagée (RapidAPI + Worker fallback) ──
+async function sivLookup(plaque) {
+  // Essai 1 : RapidAPI
+  try {
+    const r1 = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/get-vehicule-info?token=TokenDemoRapidapi&host_name=https%3A%2F%2Fapiplaqueimmatriculation.com&immatriculation=${encodeURIComponent(plaque)}`, {
+      method: 'GET',
+      headers: { 'x-rapidapi-host': 'api-plaque-immatriculation-siv.p.rapidapi.com', 'x-rapidapi-key': RAPIDAPI_KEY }
+    });
+    if (r1.ok) {
+      const j = await r1.json();
+      if (j.marque || (j.data && j.data.marque)) return j.data || j;
+    }
+  } catch(e) { console.warn('RapidAPI:', e.message); }
+
+  // Essai 2 : Worker → apiplaqueimmatriculation.com
+  try {
+    const r2 = await fetch(ANTHROPIC_WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ siv_proxy: true, plaque })
+    });
+    if (r2.ok) {
+      const j = await r2.json();
+      if (j.data && j.data.marque) return j.data;
+    }
+  } catch(e) { console.warn('Worker SIV:', e.message); }
+
+  return null; // Les deux ont échoué
+}
+
 async function rdvSearchPlaque() {
   const plaque = document.getElementById('rdvPlaqueInput').value.trim();
   if (!plaque || plaque.length < 7) { alert('Plaque invalide (ex: AB-123-CD)'); return; }
   document.getElementById('miniFLoading').style.display = 'block';
   document.getElementById('miniFResult').style.display = 'none';
   try {
-    const txt = await callAnthropic([{ role: 'user', content: `Pour la plaque française "${plaque}", déduis la marque, le modèle et la taille de pneu la plus probable. JSON uniquement sans markdown: {"taille":"205/55 R16","label":"Estimation plaque ${plaque}","vehicule":"Renault Clio 2018"}` }], 250);
-    const r = JSON.parse(txt);
-    showMiniResult(r.taille, r.label, r.vehicule || null);
+    const vehicle = await sivLookup(plaque);
+    if (!vehicle) throw new Error('Plaque inconnue');
+    const marque = vehicle.marque || '';
+    const modele = vehicle.modele || vehicle.modele_en || '';
+    const version = vehicle.version || vehicle.sra_commercial || '';
+    const dateStr = vehicle.date1erCir_fr || vehicle.date1erCir_us || '';
+    const annee   = dateStr ? dateStr.split('-')[0] : (vehicle.debut_modele ? vehicle.debut_modele.split('-')[0] : '');
+    const tailleBrute = vehicle.res || vehicle.pneu_monte || vehicle.pneu || vehicle.pneumatique || '';
+    const taillePneu  = tailleBrute.replace(/([0-9]{3}\/[0-9]{2})\s*CM\s*([0-9]+)/i,'$1 R$2').replace(/([0-9]{3}\/[0-9]{2})\s*R\s*([0-9]+)/i,'$1 R$2').trim();
+    const vehiculeLabel = (marque || modele) ? `${[marque,modele,version].filter(Boolean).join(' ')}${annee?' ('+annee+')':''}`.trim() : null;
+    if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
+      showMiniResult(taillePneu, "Taille d'origine", vehiculeLabel);
+    } else {
+      const found = findTailleFromDB(marque, modele, annee);
+      showMiniResult(found ? found.taille : '205/55 R16', found ? "Taille estimée" : 'Taille courante — à confirmer', vehiculeLabel);
+    }
   } catch(e) {
     showMiniResult('205/55 R16', 'Taille courante — à confirmer');
   }
@@ -2784,28 +2827,21 @@ async function rdvSearchPlaque2() {
   document.getElementById('miniFLoading2').style.display = 'block';
   document.getElementById('miniFResult2').style.display = 'none';
   try {
-    const res = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/get-vehicule-info?token=TokenDemoRapidapi&host_name=https%3A%2F%2Fapiplaqueimmatriculation.com&immatriculation=${encodeURIComponent(plaque)}`, {
-      method: 'GET',
-      headers: { 'x-rapidapi-host': 'api-plaque-immatriculation-siv.p.rapidapi.com', 'x-rapidapi-key': RAPIDAPI_KEY }
-    });
-    if (!res.ok) throw new Error('API error');
-    const json = await res.json();
-    const vehicle = json.data || json;
+    const vehicle = await sivLookup(plaque);
+    if (!vehicle) throw new Error('Plaque inconnue');
     const marque = vehicle.marque || '';
     const modele = vehicle.modele || vehicle.modele_en || '';
-    const version = vehicle.version || '';
-    const dateStr = vehicle.date1erCir_fr || vehicle.datelerCir_fr || vehicle.date1erCir_us || vehicle.datelerCir_us || '';
-    const annee  = dateStr ? dateStr.split('-').pop() : '';
+    const version = vehicle.version || vehicle.sra_commercial || '';
+    const dateStr = vehicle.date1erCir_fr || vehicle.date1erCir_us || '';
+    const annee   = dateStr ? dateStr.split('-')[0] : (vehicle.debut_modele ? vehicle.debut_modele.split('-')[0] : '');
     const tailleBrute = vehicle.res || vehicle.pneu_monte || vehicle.pneu || vehicle.pneumatique || '';
-    const taillePneu  = tailleBrute.replace(/\s+CM(\d+)$/i, ' R$1').trim();
-    const vehiculeLabel = (marque || modele)
-      ? `${[marque, modele, version].filter(Boolean).join(' ')}${annee ? ' (' + annee + ')' : ''}`.trim()
-      : null;
+    const taillePneu  = tailleBrute.replace(/([0-9]{3}\/[0-9]{2})\s*CM\s*([0-9]+)/i,'$1 R$2').replace(/([0-9]{3}\/[0-9]{2})\s*R\s*([0-9]+)/i,'$1 R$2').trim();
+    const vehiculeLabel = (marque || modele) ? `${[marque,modele,version].filter(Boolean).join(' ')}${annee?' ('+annee+')':''}`.trim() : null;
     if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
       showMiniResult2(taillePneu, "Taille d'origine", vehiculeLabel);
     } else {
       const found = findTailleFromDB(marque, modele, annee);
-      showMiniResult2(found ? found.taille : '—', found ? "Taille estimée" : 'Appelez-nous', vehiculeLabel);
+      showMiniResult2(found ? found.taille : '205/55 R16', found ? "Taille estimée" : 'Taille courante — à confirmer', vehiculeLabel);
     }
   } catch(e) {
     showMiniResult2('Non trouvé', 'Appelez-nous : 02 40 50 70 24');
