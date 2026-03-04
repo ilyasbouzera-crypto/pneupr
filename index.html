@@ -278,7 +278,7 @@ img[loading="lazy"] { content-visibility: auto; }
 #accueil::after {
   content: '';
   position: absolute; right: -5%; top: 50%; transform: translateY(-50%);
-  width: 550px; height: 550px; border-radius: 50%;
+  width: min(550px, 90vw); height: min(550px, 90vw); border-radius: 50%;
   background: radial-gradient(circle, rgba(77,166,255,0.07) 0%, transparent 70%);
   z-index: 0; pointer-events: none;
 }
@@ -499,7 +499,7 @@ nav {
 
 .hero-inner {
   max-width: 1400px; margin: 0 auto; padding: 4rem 5vw;
-  display: grid; grid-template-columns: 1fr 420px; gap: 4rem;
+  display: grid; grid-template-columns: 1fr min(420px, 100%); gap: 4rem;
   align-items: center; width: 100%; position: relative; z-index: 3;
 }
 .hero-left { color: white; }
@@ -798,7 +798,7 @@ section { padding: 6rem 5vw; }
 .tarif-cta-box p { color: var(--text-mid); margin-bottom: 0.7rem; font-size: 0.8rem; font-weight: 300; }
 .tarif-cta-box a { color: var(--gold); font-family: var(--font-head); font-weight: 700; font-size: 0.85rem; text-decoration: none; letter-spacing: 0.1em; }
 .tarif-table-wrap { border: 1px solid var(--border-dim); overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.tarif-table { width: 100%; border-collapse: collapse; min-width: 480px; }
+.tarif-table { width: 100%; border-collapse: collapse; min-width: 360px; }
 .tarif-table th { background: var(--carbon2); color: var(--gold); padding: 0.9rem 1.4rem; text-align: left; font-family: var(--font-head); font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; }
 .tarif-table td { padding: 1rem 1.4rem; border-bottom: 1px solid var(--border-dim); color: var(--text-mid); font-size: 0.82rem; font-weight: 300; }
 .tarif-table tr:last-child td { border-bottom: none; }
@@ -983,9 +983,9 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
 }
 
 /* ═══════════════════════════════════════
-   RESPONSIVE — TABLET (≤1024px)
+   RESPONSIVE — TABLET (≤768px)
 ═══════════════════════════════════════ */
-@media(max-width:1024px) {
+@media(max-width:768px) {
   .hero-inner { grid-template-columns: 1fr; gap: 3rem; }
   .services-grid { grid-template-columns: repeat(2,1fr); }
   .tarifs-layout { grid-template-columns: 1fr; gap: 2rem; }
@@ -1109,9 +1109,32 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
   .mini-tabs { flex-direction: column; gap: 0.3rem; }
   .mini-tab { min-height: 44px; }
 
+  /* APROPOS */
+  .apropos-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+
+  /* TEAM */
+  .team-grid { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .team-member:nth-child(n+5) { display: none; }
+
+  /* FOOTER */
+  .footer-grid { grid-template-columns: 1fr; gap: 1.2rem; }
+  .footer-brand p { max-width: 100%; }
+
+  /* TIPS GRID */
+  .tips-grid { grid-template-columns: 1fr; gap: 1rem; }
+
+  /* RESULT INFO */
+  .result-info { grid-template-columns: 1fr 1fr; }
+
+  /* FONT SIZES globaux */
+  .section-title { font-size: clamp(1.4rem, 7vw, 2rem) !important; }
+  .hero-left h1 { font-size: clamp(2rem, 9vw, 2.6rem) !important; }
+
   /* Overflow protection */
   html, body { overflow-x: hidden; max-width: 100vw; }
-  img, video, iframe { max-width: 100%; }
+  * { max-width: 100%; box-sizing: border-box; }
+  img, video, iframe { max-width: 100%; width: auto; }
+  .section-wrap { max-width: 100%; padding-left: 1rem; padding-right: 1rem; }
 }
 
 /* ═══════════════════════════════════════
