@@ -2022,7 +2022,7 @@ const RAPIDAPI_KEY = 'acc35ab39emsh20570ca1b3c14e8p1f292fjsn3f142a13e238';
 
 // ═══ CLOUDFLARE WORKER PROXY ═══
 // Remplacez par l'URL de votre Worker après déploiement
-const ANTHROPIC_WORKER_URL = 'https://pneupro-ai.VOTRE-COMPTE.workers.dev';
+const ANTHROPIC_WORKER_URL = 'https://pneupro-ai.bouzerailyas.workers.dev';
 
 // Helper centralisé — appelle le Worker (clé cachée côté serveur)
 async function callAnthropic(messages, max_tokens = 500, model = 'claude-sonnet-4-20250514') {
@@ -2198,12 +2198,13 @@ async function searchPlaque() {
       }
     } catch(e1) { console.warn('RapidAPI échouée:', e1.message); }
 
-    // Essai 2 : Worker Cloudflare → proxy vers apiplaqueimmatriculation.com (pas de CORS)
+    // Essai 2 : Worker Cloudflare → proxy SIV sans CORS
     if (!json) {
       try {
-        const sivUrl = `https://api.apiplaqueimmatriculation.com/plaque?immatriculation=${encodeURIComponent(plaque)}&token=TokenDemo2026B&pays=FR`;
-        const res2 = await fetch(ANTHROPIC_WORKER_URL + '?proxy=' + encodeURIComponent(sivUrl), {
-          method: 'GET'
+        const res2 = await fetch(ANTHROPIC_WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ siv_proxy: true, plaque: plaque })
         });
         if (res2.ok) {
           const j2 = await res2.json();
