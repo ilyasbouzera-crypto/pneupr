@@ -1310,11 +1310,12 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
             <div style="margin-top:0.6rem;border:1px dashed var(--border);padding:1.2rem;text-align:center;cursor:pointer;position:relative;background:var(--black)">
               <input type="file" id="rdvPhotoInput" accept="image/*" onchange="rdvHandlePhoto(event)" aria-label="Choisir une photo de pneu" style="position:absolute;inset:0;opacity:0;cursor:pointer">
               <span style="font-size:1.3rem">📷</span>
-              <p style="font-size:0.72rem;color:var(--text-dim);margin-top:0.4rem">Photo du flanc de votre pneu</p>
+              <p style="font-size:0.72rem;color:var(--text-dim);margin-top:0.4rem">Joindre une photo de votre pneu</p>
+              <p style="font-size:0.65rem;color:var(--text-dim);margin-top:0.2rem">La photo sera envoyée avec votre RDV</p>
             </div>
           </div>
           <div id="miniFLoading" style="display:none;text-align:center;padding:0.8rem;font-size:0.75rem;color:var(--text-mid)" role="status" aria-live="polite">
-            <div style="display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin-right:0.5rem" aria-hidden="true"></div>Analyse en cours…
+            <div style="display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin-right:0.5rem" aria-hidden="true"></div>Photo chargée…
           </div>
           <div class="mini-result" id="miniFResult" style="display:none;margin-top:0.8rem;padding:0.8rem;background:var(--black);border:1px solid var(--gold);border-left:3px solid var(--gold)" role="status" aria-live="polite">
             <div style="font-family:var(--font-head);font-size:0.6rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.2rem">Taille trouvée</div>
@@ -1346,9 +1347,19 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
           <option value="Autre / Devis">Autre / Devis gratuit</option>
         </select>
       </div>
+      <div class="rdv-group">
+        <label for="nomVehicule">🚗 Nom du véhicule</label>
+        <input type="text" id="nomVehicule" placeholder="Ex : Renault Clio 2020, Peugeot 308…" autocomplete="off">
+      </div>
+      <div class="rdv-group" id="vehicule-group" style="display:none">
+        <label for="vehiculeVisible">🚗 Véhicule identifié</label>
+        <input type="text" id="vehiculeVisible" readonly style="background:rgba(77,166,255,0.06);border-color:var(--gold);color:var(--offwhite);font-family:var(--font-head);font-weight:700;font-size:0.95rem;letter-spacing:0.05em;cursor:default" aria-readonly="true">
+      </div>
       <div class="rdv-group" id="taille-group" style="display:none">
         <label for="taillePneu">Taille de pneu détectée</label>
         <input type="text" id="taillePneu" readonly style="background:rgba(77,166,255,0.06);border-color:var(--gold);color:var(--gold);font-family:var(--font-head);font-weight:700;font-size:1rem;letter-spacing:0.1em;cursor:default" aria-readonly="true">
+        <input type="hidden" id="vehiculeHidden" value="">
+        <input type="hidden" id="sourceTailleHidden" value="">
       </div>
       <span class="cal-label" id="cal-label-1">Choisir un jour *</span>
       <div class="calendar" aria-labelledby="cal-label-1">
@@ -1449,7 +1460,8 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
             <div style="margin-top:0.6rem;border:1px dashed var(--border);padding:1.2rem;text-align:center;cursor:pointer;position:relative;background:var(--black)">
               <input type="file" id="rdvPhotoInput2" accept="image/*" onchange="rdvHandlePhoto2(event)" aria-label="Photo du pneu" style="position:absolute;inset:0;opacity:0;cursor:pointer">
               <span style="font-size:1.3rem">📷</span>
-              <p style="font-size:0.72rem;color:var(--text-dim);margin-top:0.4rem">Photo du flanc de votre pneu</p>
+              <p style="font-size:0.72rem;color:var(--text-dim);margin-top:0.4rem">Joindre une photo de votre pneu</p>
+              <p style="font-size:0.65rem;color:var(--text-dim);margin-top:0.2rem">La photo sera envoyée avec votre RDV</p>
             </div>
           </div>
           <!-- Loading + Résultat -->
@@ -1465,9 +1477,19 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
         </div>
       </div>
       <!-- Champ taille auto-rempli -->
+      <div class="rdv-group">
+        <label for="nomVehicule2">🚗 Nom du véhicule</label>
+        <input type="text" id="nomVehicule2" placeholder="Ex : Renault Clio 2020, Peugeot 308…" autocomplete="off">
+      </div>
+      <div class="rdv-group" id="vehicule-group2" style="display:none">
+        <label for="vehiculeVisible2">🚗 Véhicule identifié</label>
+        <input type="text" id="vehiculeVisible2" readonly style="background:rgba(77,166,255,0.06);border-color:var(--gold);color:var(--offwhite);font-family:var(--font-head);font-weight:700;font-size:0.95rem;letter-spacing:0.05em;cursor:default">
+      </div>
       <div class="rdv-group" id="taille-group2" style="display:none">
         <label for="taillePneu2">Taille de pneu détectée</label>
         <input type="text" id="taillePneu2" readonly style="background:rgba(77,166,255,0.06);border-color:var(--gold);color:var(--gold);font-family:var(--font-head);font-weight:700;font-size:1rem;letter-spacing:0.1em;cursor:default">
+        <input type="hidden" id="vehiculeHidden2" value="">
+        <input type="hidden" id="sourceTailleHidden2" value="">
       </div>
 
       <div class="rdv-row">
@@ -1555,7 +1577,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
         <button class="finder-btn" onclick="searchPlaque()" aria-label="Rechercher la taille par plaque">→ Rechercher</button>
       </div>
       <p class="plaque-note">Format SIV (ex : AB-123-CD) ou ancien format (ex : 1234 AB 75)</p>
-      <div class="ai-loading" id="plaqueLoading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><br>Analyse en cours…</div>
+      <div class="ai-loading" id="plaqueLoading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><br>Photo chargée…</div>
       <div class="finder-result" id="plaqueResult" role="region" aria-live="polite"></div>
     </div>
 
@@ -1582,7 +1604,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
     </div>
 
     <div class="finder-panel" id="panel-photo" role="tabpanel">
-      <p style="color:var(--text-mid);font-size:0.82rem;margin-bottom:1.2rem;font-weight:300">Prenez en photo le flanc de votre pneu — notre IA lit les inscriptions et identifie la taille.</p>
+      <p style="color:var(--text-mid);font-size:0.82rem;margin-bottom:1.2rem;font-weight:300">Prenez en photo le flanc de votre pneu — la photo sera jointe à votre demande de rendez-vous.</p>
       <div class="photo-drop" id="photoDrop">
         <input type="file" id="photoInput" accept="image/*" onchange="handlePhoto(event)" aria-label="Choisir une photo de pneu">
         <span class="photo-drop-icon" aria-hidden="true">📷</span>
@@ -2037,7 +2059,7 @@ function showResult(containerId, data) {
       <div class="result-info-item"><strong>Diamètre</strong><span>${data.taille.split('R')[1] || '—'}"</span></div>` : ''}
     </div>
     ${data.taille && data.taille !== '—' ? `
-    <button onclick="utilisierTaille('${data.taille}')" style="width:100%;margin-bottom:0.8rem;background:var(--gold);color:var(--black);border:none;padding:0.75rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem">
+    <button onclick="utilisierTaille('${data.taille}', '${(data.vehicule||'').replace(/'/g,'\'')}')" style="width:100%;margin-bottom:0.8rem;background:var(--gold);color:var(--black);border:none;padding:0.75rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem">
       ✓ Utiliser cette taille dans le formulaire
     </button>` : ''}
     <div class="result-cta">
@@ -2048,7 +2070,7 @@ function showResult(containerId, data) {
 }
 
 // Injecter la taille dans le formulaire RDV et scroller dessus
-function utilisierTaille(taille) {
+function utilisierTaille(taille, vehicule) {
   // Formulaire desktop
   const input1 = document.getElementById('taillePneu');
   const group1 = document.getElementById('taille-group');
@@ -2058,6 +2080,14 @@ function utilisierTaille(taille) {
     const svc1 = document.getElementById('service');
     if (svc1 && !svc1.value) svc1.value = 'Changement de pneus';
   }
+  if (vehicule) {
+    const nv1 = document.getElementById('nomVehicule');
+    if (nv1) nv1.value = vehicule;
+    const vh1 = document.getElementById('vehiculeHidden');
+    if (vh1) vh1.value = vehicule;
+    const vv1 = document.getElementById('vehiculeVisible');
+    if (vv1) { vv1.value = vehicule; document.getElementById('vehicule-group').style.display = 'flex'; }
+  }
   // Formulaire mobile
   const input2 = document.getElementById('taillePneu2');
   const group2 = document.getElementById('taille-group2');
@@ -2066,6 +2096,14 @@ function utilisierTaille(taille) {
     if (group2) group2.style.display = 'flex';
     const svc2 = document.getElementById('service2');
     if (svc2 && !svc2.value) svc2.value = 'Changement de pneus';
+  }
+  if (vehicule) {
+    const nv2 = document.getElementById('nomVehicule2');
+    if (nv2) nv2.value = vehicule;
+    const vh2 = document.getElementById('vehiculeHidden2');
+    if (vh2) vh2.value = vehicule;
+    const vv2 = document.getElementById('vehiculeVisible2');
+    if (vv2) { vv2.value = vehicule; document.getElementById('vehicule-group2').style.display = 'flex'; }
   }
   // Scroller vers le formulaire
   const form = document.getElementById('contact') || document.getElementById('contact-mobile');
@@ -2421,6 +2459,8 @@ if (drop) {
 
 // === MINI FINDER ===
 let miniFTailleFound = '';
+let miniFVehicule = '';
+let miniFSource = '';
 
 function toggleMiniFinder() {
   const body = document.getElementById('miniFBody');
@@ -2442,31 +2482,66 @@ function switchMiniTab(tab) {
 }
 
 function showMiniResult(taille, label, vehicule) {
+  console.log('🔵 showMiniResult appelé → taille:', taille, '| vehicule:', vehicule);
   miniFTailleFound = taille;
+  miniFVehicule = vehicule || '';
+  miniFSource = label || '';
+
+  // Appliquer IMMÉDIATEMENT dans le formulaire sans attendre le clic
+  const vh = document.getElementById('vehiculeHidden');
+  const sh = document.getElementById('sourceTailleHidden');
+  const tp = document.getElementById('taillePneu');
+  const tg = document.getElementById('taille-group');
+  const vv = document.getElementById('vehiculeVisible');
+  const vg = document.getElementById('vehicule-group');
+  const svc = document.getElementById('service');
+
+  if (vh) vh.value = miniFVehicule;
+  if (sh) sh.value = miniFSource;
+  if (tp) tp.value = taille;
+  if (tg) tg.style.display = 'flex';
+  if (vv) vv.value = miniFVehicule;
+  if (vg) vg.style.display = miniFVehicule ? 'flex' : 'none';
+  if (svc && !svc.value) svc.value = 'Changement de pneus';
+
+  // Afficher le résultat dans le mini-finder
   const el = document.getElementById('miniFResult');
+  el.dataset.vehicule = miniFVehicule;
+  el.dataset.taille = taille;
   el.innerHTML = `
-    ${vehicule ? `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;padding-bottom:0.6rem;border-bottom:1px solid rgba(255,193,7,0.2)">
+    ${vehicule ? `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;padding-bottom:0.6rem;border-bottom:1px solid rgba(77,166,255,0.2)">
       <span>🚗</span>
       <div>
         <div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.12em;font-family:var(--font-head)">Véhicule identifié</div>
-        <div style="font-family:var(--font-head);font-size:0.8rem;font-weight:800;color:var(--offwhite);text-transform:uppercase;letter-spacing:0.05em">${vehicule}</div>
+        <div id="miniFVehiculeText" style="font-family:var(--font-head);font-size:0.8rem;font-weight:800;color:var(--offwhite);text-transform:uppercase;letter-spacing:0.05em">${vehicule}</div>
       </div>
     </div>` : ''}
     <div style="font-family:var(--font-head);font-size:0.55rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.2rem">Taille trouvée</div>
-    <div style="font-family:var(--font-head);font-size:1.4rem;font-weight:900;color:var(--gold)">${taille}</div>
+    <div id="miniFTailleText" style="font-family:var(--font-head);font-size:1.4rem;font-weight:900;color:var(--gold)">${taille}</div>
     <div style="font-size:0.65rem;color:var(--text-dim);margin-top:0.1rem">${label}</div>
-    <button onclick="applyTailleToForm()" style="margin-top:0.8rem;background:var(--gold);color:var(--black);border:none;padding:0.6rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;width:100%;min-height:40px">✓ Utiliser cette taille dans le formulaire</button>
-    <div style="margin-top:0.5rem;font-size:0.6rem;color:var(--text-dim);text-align:center">
-      💡 Vérifiez sur le flanc de votre pneu avant de commander
-    </div>
+    <button onclick="applyTailleToForm()" style="margin-top:0.6rem;background:var(--gold);color:var(--black);border:none;padding:0.5rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;width:100%;min-height:40px">✓ Utiliser cette taille dans le formulaire</button>
   `;
   el.style.display = 'block';
   document.getElementById('miniFLoading').style.display = 'none';
 }
 
 function applyTailleToForm() {
-  document.getElementById('taillePneu').value = miniFTailleFound;
-  document.getElementById('taille-group').style.display = 'flex';
+  const result = document.getElementById('miniFResult');
+  const taille = result.dataset.taille || miniFTailleFound;
+  const vehicule = result.dataset.vehicule || miniFVehicule;
+
+  if (taille) {
+    document.getElementById('taillePneu').value = taille;
+    document.getElementById('taille-group').style.display = 'flex';
+  }
+  if (vehicule) {
+    document.getElementById('vehiculeVisible').value = vehicule;
+    document.getElementById('vehicule-group').style.display = 'flex';
+    document.getElementById('vehiculeHidden').value = vehicule;
+    const nv = document.getElementById('nomVehicule');
+    if (nv) nv.value = vehicule;
+  }
+  document.getElementById('sourceTailleHidden').value = miniFSource;
   const svc = document.getElementById('service');
   if (!svc.value) svc.value = 'Changement de pneus';
   document.getElementById('miniFBody').classList.remove('open');
@@ -2529,22 +2604,67 @@ async function rdvSearchPlaque() {
   try {
     const vehicle = await sivLookup(plaque);
     if (!vehicle) throw new Error('Plaque inconnue');
-    const marque = vehicle.marque || '';
-    const modele = vehicle.modele || vehicle.modele_en || '';
-    const version = vehicle.version || vehicle.sra_commercial || '';
-    const dateStr = vehicle.date1erCir_fr || vehicle.date1erCir_us || '';
-    const annee   = dateStr ? dateStr.split('-')[0] : (vehicle.debut_modele ? vehicle.debut_modele.split('-')[0] : '');
-    const tailleBrute = vehicle.res || vehicle.pneu_monte || vehicle.pneu || vehicle.pneumatique || '';
-    const taillePneu  = tailleBrute.replace(/([0-9]{3}\/[0-9]{2})\s*CM\s*([0-9]+)/i,'$1 R$2').replace(/([0-9]{3}\/[0-9]{2})\s*R\s*([0-9]+)/i,'$1 R$2').trim();
-    const vehiculeLabel = (marque || modele) ? `${[marque,modele,version].filter(Boolean).join(' ')}${annee?' ('+annee+')':''}`.trim() : null;
+
+    // === MARQUE / MODELE / VERSION ===
+    const marque  = String(vehicle.marque  || vehicle.Marque  || vehicle.make   || '').trim();
+    const modele  = String(vehicle.modele  || vehicle.modele_en || vehicle.model || '').trim();
+    const version = String(vehicle.sra_commercial || vehicle.version || '').trim();
+
+    // === ANNEE : chercher la partie à 4 chiffres dans toutes les dates ===
+    const dateRaw = String(vehicle.date1erCir_fr || vehicle.date1erCir_us || vehicle.debut_modele || '');
+    const anneeMatch = dateRaw.match(/\b(19|20)\d{2}\b/);
+    const annee = anneeMatch ? anneeMatch[0] : '';
+
+    // === TAILLE : parcourir tous les champs de l'objet ===
+    let tailleBrute = '';
+    for (const [k, v] of Object.entries(vehicle)) {
+      if (typeof v === 'string' && v.match(/\d{3}\/\d{2}/)) {
+        tailleBrute = v;
+        break;
+      }
+    }
+
+    // === LABEL VEHICULE ===
+    const partsLabel = [marque, modele, version].filter(Boolean);
+    const vehiculeLabel = partsLabel.length > 0
+      ? partsLabel.join(' ') + (annee ? ` (${annee})` : '')
+      : null;
+
+    console.log('✅ vehicule:', vehiculeLabel, '| taille:', tailleBrute);
+
+    const taillePneu = tailleBrute
+      .replace(/([0-9]{3}\/[0-9]{2})\s*[CR]M?\s*([0-9]+)/i, '$1 R$2')
+      .trim();
+
     if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
       showMiniResult(taillePneu, "Taille d'origine", vehiculeLabel);
     } else {
       const found = findTailleFromDB(marque, modele, annee);
-      showMiniResult(found ? found.taille : '205/55 R16', found ? "Taille estimée" : 'Taille courante — à confirmer', vehiculeLabel);
+      if (found) {
+        showMiniResult(found.taille, "Taille estimée", vehiculeLabel);
+      } else if (marque && modele) {
+        try {
+          const res = await fetch(ANTHROPIC_WORKER_URL, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 100,
+              messages: [{ role: 'user', content: `Taille pneu origine ${marque} ${modele} ${annee}. JSON uniquement: {"taille":"195/55 R16"}` }] })
+          });
+          const d = await res.json();
+          const txt = (d.content || []).map(c => c.text || '').join('').replace(/```json|```/g,'').trim();
+          const r = JSON.parse(txt);
+          showMiniResult(r.taille || '195/55 R16', "Taille estimée par IA", vehiculeLabel);
+        } catch(aiErr) {
+          showMiniResult('195/55 R16', 'Taille à confirmer', vehiculeLabel);
+        }
+      } else {
+        showMiniResult('205/55 R16', 'Taille à confirmer — appelez-nous', vehiculeLabel);
+      }
     }
   } catch(e) {
-    showMiniResult('205/55 R16', 'Taille courante — à confirmer');
+    console.error('rdvSearchPlaque error:', e);
+    // Récupérer le véhicule déjà affiché si possible
+    const vLabel = (typeof vehiculeLabel !== 'undefined' && vehiculeLabel) ? vehiculeLabel : null;
+    showMiniResult('205/55 R16', 'Taille à confirmer — appelez-nous', vLabel);
   }
 }
 
@@ -2575,30 +2695,28 @@ async function rdvSearchVoiture() {
   }
 }
 
-async function rdvHandlePhoto(e) {
+let rdvPhotoBase64 = '';
+let rdvPhotoType = '';
+
+function rdvHandlePhoto(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = async (ev) => {
-    const base64 = ev.target.result.split(',')[1];
-    document.getElementById('miniFLoading').style.display = 'block';
-    document.getElementById('miniFResult').style.display = 'none';
-    try {
-      const res = await fetch(ANTHROPIC_WORKER_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300,
-          messages: [{ role: 'user', content: [
-            { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
-            { type: 'text', text: 'Lis la taille sur ce pneu. JSON uniquement: {"taille":"205/55 R16","label":"Lu sur votre pneu"}' }
-          ]}] })
-      });
-      const d = await res.json();
-      const txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
-      const r = JSON.parse(txt);
-      showMiniResult(r.taille, r.label, r.vehicule || null);
-    } catch(e) {
-      showMiniResult('Non lisible', 'Appelez-nous : 02 40 50 70 24');
+  reader.onload = (ev) => {
+    rdvPhotoBase64 = ev.target.result;
+    rdvPhotoType = file.type;
+    // Afficher aperçu dans le mini-finder
+    const panel = document.getElementById('mini-panel-photo');
+    let preview = document.getElementById('rdvPhotoPreview');
+    if (!preview) {
+      preview = document.createElement('div');
+      preview.id = 'rdvPhotoPreview';
+      preview.style.cssText = 'margin-top:0.8rem;text-align:center;';
+      panel.appendChild(preview);
     }
+    preview.innerHTML = `
+      <img src="${ev.target.result}" alt="Photo du pneu" style="max-width:100%;max-height:120px;border:1px solid var(--gold);margin-bottom:0.5rem;">
+      <div style="font-size:0.7rem;color:var(--green);font-family:var(--font-head);font-weight:700;letter-spacing:0.08em;">✓ PHOTO AJOUTÉE — sera envoyée avec votre RDV</div>`;
   };
   reader.readAsDataURL(file);
 }
@@ -2635,10 +2753,16 @@ function goToSlide(n) {
 slideInterval = setInterval(() => goToSlide((currentSlide+1)%slides.length), 5000);
 
 // === EMAILJS ===
-if (typeof emailjs !== 'undefined') {
-  emailjs.init('Y2U7ChVfgAx_7aAAp');
+function initEmailJS() {
+  if (typeof emailjs !== 'undefined') {
+    emailjs.init('Y2U7ChVfgAx_7aAAp');
+    console.log('EmailJS initialisé avec succès');
+  } else {
+    console.warn('EmailJS non disponible');
+  }
 }
-
+// Le script emailjs est en "defer" donc on attend window.load
+window.addEventListener('load', initEmailJS);
 // === CUSTOM CURSOR (desktop only) ===
 const cursor = document.getElementById('cursor');
 const ring = document.getElementById('cursorRing');
@@ -2777,7 +2901,7 @@ renderCalendar();
 renderCalendar2();
 
 // === FORMULAIRES ===
-function sendRDV(prenom, nom, phone, email, date, heure, service, taille, successId, btnEl) {
+function sendRDV(prenom, nom, phone, email, date, heure, service, taille, vehicule, source_taille, successId, btnEl) {
   if (!prenom || !phone || !date || !heure || !service) {
     alert('Merci de remplir tous les champs obligatoires : prénom, téléphone, jour, heure et prestation.'); return;
   }
@@ -2798,18 +2922,28 @@ function sendRDV(prenom, nom, phone, email, date, heure, service, taille, succes
   const onError = (err) => {
     clearTimeout(safetyTimer);
     console.error('EmailJS error:', err);
-    // On affiche quand même le succès pour ne pas bloquer l'utilisateur
     document.getElementById(successId).style.display = 'block';
     btnEl.textContent = origText; btnEl.disabled = false;
   };
 
   if (typeof emailjs !== 'undefined') {
+    // S'assurer que emailjs est bien initialisé
+    try { emailjs.init('Y2U7ChVfgAx_7aAAp'); } catch(e) {}
     emailjs.send('service_hsdt5uk', 'template_yllon3k', {
-      prenom, nom, telephone: phone, email, date, heure, service,
-      name: prenom + ' ' + nom, title: service, message: taille ? `Taille de pneu : ${taille}` : '—'
+      prenom:        prenom,
+      nom:           nom,
+      telephone:     phone,
+      email:         email,
+      date:          date,
+      heure:         heure,
+      service:       service,
+      taille_pneu:   taille || '—',
+      vehicule:      vehicule || '—',
+      source_taille: source_taille || '—',
+      message:       taille ? `Taille : ${taille}${vehicule ? ' · ' + vehicule : ''}` : '—',
+      photo_pneu:    rdvPhotoBase64 || ''
     }).then(onSuccess).catch(onError);
   } else {
-    // EmailJS non chargé : on confirme quand même immédiatement
     clearTimeout(safetyTimer);
     setTimeout(onSuccess, 600);
   }
@@ -2818,23 +2952,47 @@ function sendRDV(prenom, nom, phone, email, date, heure, service, taille, succes
 function submitForm() {
   const btn = document.querySelector('#contact .btn-rdv-submit');
   const taille = document.getElementById('taillePneu')?.value || '';
-  sendRDV(document.getElementById('fname').value.trim(), document.getElementById('lname').value.trim(),
-    document.getElementById('phone').value.trim(), document.getElementById('email').value.trim(),
-    document.getElementById('date').value, document.getElementById('heure').value,
-    document.getElementById('service').value, taille, 'formSuccess', btn);
+  const vehiculeAuto = document.getElementById('vehiculeHidden')?.value || miniFVehicule || '';
+  const vehiculeManuel = document.getElementById('nomVehicule')?.value.trim() || '';
+  const vehicule = vehiculeAuto || vehiculeManuel || '—';
+  const source = document.getElementById('sourceTailleHidden')?.value || miniFSource || '—';
+  sendRDV(
+    document.getElementById('fname').value.trim(),
+    document.getElementById('lname').value.trim(),
+    document.getElementById('phone').value.trim(),
+    document.getElementById('email').value.trim(),
+    document.getElementById('date').value,
+    document.getElementById('heure').value,
+    document.getElementById('service').value,
+    taille, vehicule, source,
+    'formSuccess', btn
+  );
 }
 
 function submitForm2() {
   const btn = document.querySelector('#contact-m .btn-rdv-submit');
   const taille = document.getElementById('taillePneu2')?.value || '';
-  sendRDV(document.getElementById('fname2').value.trim(), document.getElementById('lname2').value.trim(),
-    document.getElementById('phone2').value.trim(), document.getElementById('email2').value.trim(),
-    document.getElementById('date2').value, document.getElementById('heure2').value,
-    document.getElementById('service2').value, taille, 'formSuccess2', btn);
+  const vehiculeAuto = document.getElementById('vehiculeHidden2')?.value || miniFVehicule2 || '';
+  const vehiculeManuel = document.getElementById('nomVehicule2')?.value.trim() || '';
+  const vehicule = vehiculeAuto || vehiculeManuel || '—';
+  const source = document.getElementById('sourceTailleHidden2')?.value || miniFSource2 || '—';
+  sendRDV(
+    document.getElementById('fname2').value.trim(),
+    document.getElementById('lname2').value.trim(),
+    document.getElementById('phone2').value.trim(),
+    document.getElementById('email2').value.trim(),
+    document.getElementById('date2').value,
+    document.getElementById('heure2').value,
+    document.getElementById('service2').value,
+    taille, vehicule, source,
+    'formSuccess2', btn
+  );
 }
 
 // === MINI FINDER MOBILE (form 2) ===
 let miniFTailleFound2 = '';
+let miniFVehicule2 = '';
+let miniFSource2 = '';
 
 function toggleMiniFinder2() {
   const body = document.getElementById('miniFBody2');
@@ -2853,27 +3011,64 @@ function switchMiniTab2(tab) {
 
 function showMiniResult2(taille, label, vehicule) {
   miniFTailleFound2 = taille;
+  miniFVehicule2 = vehicule || '';
+  miniFSource2 = label || '';
+
+  // Appliquer IMMÉDIATEMENT dans le formulaire sans attendre le clic
+  const vh = document.getElementById('vehiculeHidden2');
+  const sh = document.getElementById('sourceTailleHidden2');
+  const tp = document.getElementById('taillePneu2');
+  const tg = document.getElementById('taille-group2');
+  const vv = document.getElementById('vehiculeVisible2');
+  const vg = document.getElementById('vehicule-group2');
+  const svc = document.getElementById('service2');
+
+  if (vh) vh.value = miniFVehicule2;
+  if (sh) sh.value = miniFSource2;
+  if (tp) tp.value = taille;
+  if (tg) tg.style.display = 'flex';
+  if (vv) vv.value = miniFVehicule2;
+  if (vg) vg.style.display = miniFVehicule2 ? 'flex' : 'none';
+  if (svc && !svc.value) svc.value = 'Changement de pneus';
+
+  // Afficher le résultat dans le mini-finder
   const el = document.getElementById('miniFResult2');
+  el.dataset.vehicule = miniFVehicule2;
+  el.dataset.taille = taille;
   el.innerHTML = `
     ${vehicule ? `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;padding-bottom:0.6rem;border-bottom:1px solid rgba(77,166,255,0.2)">
       <span>🚗</span>
       <div>
         <div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.12em;font-family:var(--font-head)">Véhicule identifié</div>
-        <div style="font-family:var(--font-head);font-size:0.8rem;font-weight:800;color:var(--offwhite);text-transform:uppercase;letter-spacing:0.05em">${vehicule}</div>
+        <div id="miniFVehiculeText2" style="font-family:var(--font-head);font-size:0.8rem;font-weight:800;color:var(--offwhite);text-transform:uppercase;letter-spacing:0.05em">${vehicule}</div>
       </div>
     </div>` : ''}
     <div style="font-family:var(--font-head);font-size:0.55rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.2rem">Taille de pneu</div>
-    <div id="miniFTaille2" style="font-family:var(--font-head);font-size:1.6rem;font-weight:900;color:var(--gold)">${taille}</div>
-    <div id="miniFLabel2" style="font-size:0.65rem;color:var(--text-dim);margin-top:0.1rem">${label}</div>
-    <button onclick="applyTailleToForm2()" style="margin-top:0.8rem;background:var(--gold);color:var(--black);border:none;padding:0.6rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;width:100%;min-height:40px">✓ Utiliser cette taille dans le formulaire</button>
+    <div id="miniFTailleText2" style="font-family:var(--font-head);font-size:1.6rem;font-weight:900;color:var(--gold)">${taille}</div>
+    <div style="font-size:0.65rem;color:var(--text-dim);margin-top:0.1rem">${label}</div>
+    <button onclick="applyTailleToForm2()" style="margin-top:0.6rem;background:var(--gold);color:var(--black);border:none;padding:0.5rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;width:100%;min-height:40px">✓ Utiliser cette taille dans le formulaire</button>
   `;
   el.style.display = 'block';
   document.getElementById('miniFLoading2').style.display = 'none';
 }
 
 function applyTailleToForm2() {
-  document.getElementById('taillePneu2').value = miniFTailleFound2;
-  document.getElementById('taille-group2').style.display = 'flex';
+  const result = document.getElementById('miniFResult2');
+  const taille = result.dataset.taille || miniFTailleFound2;
+  const vehicule = result.dataset.vehicule || miniFVehicule2;
+
+  if (taille) {
+    document.getElementById('taillePneu2').value = taille;
+    document.getElementById('taille-group2').style.display = 'flex';
+  }
+  if (vehicule) {
+    document.getElementById('vehiculeVisible2').value = vehicule;
+    document.getElementById('vehicule-group2').style.display = 'flex';
+    document.getElementById('vehiculeHidden2').value = vehicule;
+    const nv2 = document.getElementById('nomVehicule2');
+    if (nv2) nv2.value = vehicule;
+  }
+  document.getElementById('sourceTailleHidden2').value = miniFSource2;
   const svc = document.getElementById('service2');
   if (!svc.value) svc.value = 'Changement de pneus';
   document.getElementById('miniFBody2').classList.remove('open');
@@ -2950,27 +3145,24 @@ async function rdvSearchVoiture2() {
   } catch(e) { showMiniResult2('205/55 R16', `${marque} ${modele} ${annee} · À confirmer`); }
 }
 
-async function rdvHandlePhoto2(e) {
-  const file = e.target.files[0]; if (!file) return;
+function rdvHandlePhoto2(e) {
+  const file = e.target.files[0];
+  if (!file) return;
   const reader = new FileReader();
-  reader.onload = async (ev) => {
-    const base64 = ev.target.result.split(',')[1];
-    document.getElementById('miniFLoading2').style.display = 'block';
-    document.getElementById('miniFResult2').style.display = 'none';
-    try {
-      const res = await fetch(ANTHROPIC_WORKER_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300,
-          messages: [{ role: 'user', content: [
-            { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
-            { type: 'text', text: 'Lis la taille sur ce pneu. JSON uniquement: {"taille":"205/55 R16","label":"Lu sur votre pneu"}' }
-          ]}] })
-      });
-      const d = await res.json();
-      const txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
-      const r = JSON.parse(txt);
-      showMiniResult2(r.taille, r.label);
-    } catch(e) { showMiniResult2('Non lisible', 'Appelez-nous : 02 40 50 70 24'); }
+  reader.onload = (ev) => {
+    rdvPhotoBase64 = ev.target.result;
+    rdvPhotoType = file.type;
+    const panel = document.getElementById('mini-panel-photo2');
+    let preview = document.getElementById('rdvPhotoPreview2');
+    if (!preview) {
+      preview = document.createElement('div');
+      preview.id = 'rdvPhotoPreview2';
+      preview.style.cssText = 'margin-top:0.8rem;text-align:center;';
+      panel.appendChild(preview);
+    }
+    preview.innerHTML = `
+      <img src="${ev.target.result}" alt="Photo du pneu" style="max-width:100%;max-height:120px;border:1px solid var(--gold);margin-bottom:0.5rem;">
+      <div style="font-size:0.7rem;color:var(--green);font-family:var(--font-head);font-weight:700;letter-spacing:0.08em;">✓ PHOTO AJOUTÉE — sera envoyée avec votre RDV</div>`;
   };
   reader.readAsDataURL(file);
 }
