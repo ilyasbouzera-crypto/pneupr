@@ -1360,7 +1360,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
           <option value="Autre / Devis">Autre / Devis gratuit</option>
         </select>
       </div>
-      <div class="rdv-group">
+      <div class="rdv-group" id="nomVehicule-group">
         <label for="nomVehicule">🚗 Nom du véhicule</label>
         <input type="text" id="nomVehicule" placeholder="Ex : Renault Clio 2020, Peugeot 308…" autocomplete="off">
       </div>
@@ -1501,7 +1501,7 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
         </div>
       </div>
       <!-- Champ taille auto-rempli -->
-      <div class="rdv-group">
+      <div class="rdv-group" id="nomVehicule-group2">
         <label for="nomVehicule2">🚗 Nom du véhicule</label>
         <input type="text" id="nomVehicule2" placeholder="Ex : Renault Clio 2020, Peugeot 308…" autocomplete="off">
       </div>
@@ -2121,7 +2121,7 @@ function utilisierTaille(taille, vehicule) {
     const vh1 = document.getElementById('vehiculeHidden');
     if (vh1) vh1.value = vehicule;
     const vv1 = document.getElementById('vehiculeVisible');
-    if (vv1) { vv1.value = vehicule; document.getElementById('vehicule-group').style.display = 'flex'; }
+    if (vv1) { vv1.value = vehicule; document.getElementById('vehicule-group').style.display = 'flex'; document.getElementById('nomVehicule-group').style.display = 'none'; }
   }
   // Formulaire mobile
   const input2 = document.getElementById('taillePneu2');
@@ -2138,7 +2138,7 @@ function utilisierTaille(taille, vehicule) {
     const vh2 = document.getElementById('vehiculeHidden2');
     if (vh2) vh2.value = vehicule;
     const vv2 = document.getElementById('vehiculeVisible2');
-    if (vv2) { vv2.value = vehicule; document.getElementById('vehicule-group2').style.display = 'flex'; }
+    if (vv2) { vv2.value = vehicule; document.getElementById('vehicule-group2').style.display = 'flex'; document.getElementById('nomVehicule-group2').style.display = 'none'; }
   }
   // Scroller vers le formulaire
   const form = document.getElementById('contact') || document.getElementById('contact-mobile');
@@ -2176,7 +2176,7 @@ function utilisierTailleBtn(taille, vehicule, btn) {
     const nv1 = document.getElementById('nomVehicule'); if (nv1) nv1.value = vehicule;
     const vh1 = document.getElementById('vehiculeHidden'); if (vh1) vh1.value = vehicule;
     const vv1 = document.getElementById('vehiculeVisible');
-    if (vv1) { vv1.value = vehicule; document.getElementById('vehicule-group').style.display = 'flex'; }
+    if (vv1) { vv1.value = vehicule; document.getElementById('vehicule-group').style.display = 'flex'; document.getElementById('nomVehicule-group').style.display = 'none'; }
   }
   const input2 = document.getElementById('taillePneu2');
   const group2 = document.getElementById('taille-group2');
@@ -2185,7 +2185,7 @@ function utilisierTailleBtn(taille, vehicule, btn) {
     const nv2 = document.getElementById('nomVehicule2'); if (nv2) nv2.value = vehicule;
     const vh2 = document.getElementById('vehiculeHidden2'); if (vh2) vh2.value = vehicule;
     const vv2 = document.getElementById('vehiculeVisible2');
-    if (vv2) { vv2.value = vehicule; document.getElementById('vehicule-group2').style.display = 'flex'; }
+    if (vv2) { vv2.value = vehicule; document.getElementById('vehicule-group2').style.display = 'flex'; document.getElementById('nomVehicule-group2').style.display = 'none'; }
   }
   const form = document.getElementById('contact') || document.getElementById('contact-mobile');
   if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2684,6 +2684,7 @@ function applyTailleToForm() {
   if (vehicule) {
     document.getElementById('vehiculeVisible').value = vehicule;
     document.getElementById('vehicule-group').style.display = 'flex';
+    document.getElementById('nomVehicule-group').style.display = 'none';
     document.getElementById('vehiculeHidden').value = vehicule;
     const nv = document.getElementById('nomVehicule');
     if (nv) nv.value = vehicule;
@@ -3236,6 +3237,7 @@ function applyTailleToForm2() {
   if (vehicule) {
     document.getElementById('vehiculeVisible2').value = vehicule;
     document.getElementById('vehicule-group2').style.display = 'flex';
+    document.getElementById('nomVehicule-group2').style.display = 'none';
     document.getElementById('vehiculeHidden2').value = vehicule;
     const nv2 = document.getElementById('nomVehicule2');
     if (nv2) nv2.value = vehicule;
