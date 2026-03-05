@@ -1172,6 +1172,19 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
   body { background: white; color: black; }
   .section-title, .service-name { color: black !important; }
 }
+
+/* Photo jointe dans le formulaire */
+.photo-jointe-group { display:none; margin-bottom:0.8rem; }
+.photo-jointe-group .photo-jointe-inner {
+  display:flex; align-items:center; gap:0.8rem;
+  border:1px solid var(--gold); background:rgba(201,160,84,0.06); padding:0.6rem 0.8rem;
+}
+.photo-jointe-group img { width:64px; height:64px; object-fit:cover; border:1px solid var(--border); flex-shrink:0; }
+.photo-jointe-group .photo-jointe-info { flex:1; min-width:0; }
+.photo-jointe-group .photo-jointe-label { font-family:var(--font-head); font-size:0.62rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim); margin-bottom:0.25rem; }
+.photo-jointe-group .photo-jointe-status { font-family:var(--font-head); font-size:0.72rem; font-weight:700; color:#4ade80; letter-spacing:0.06em; }
+.photo-jointe-group .photo-jointe-remove { background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:0.9rem; padding:0.2rem 0.4rem; flex-shrink:0; }
+.photo-jointe-group .photo-jointe-remove:hover { color:#f87171; }
 </style>
 </head>
 <body>
@@ -1361,6 +1374,17 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
         <input type="hidden" id="vehiculeHidden" value="">
         <input type="hidden" id="sourceTailleHidden" value="">
       </div>
+      <div class="rdv-group photo-jointe-group" id="photo-jointe-group">
+        <label>📷 Photo jointe</label>
+        <div class="photo-jointe-inner">
+          <img id="photo-jointe-img" src="" alt="Photo du pneu jointe">
+          <div class="photo-jointe-info">
+            <div class="photo-jointe-label">Photo du pneu</div>
+            <div class="photo-jointe-status">✓ Sera envoyée avec votre RDV</div>
+          </div>
+          <button class="photo-jointe-remove" onclick="retirerPhotoFormulaire(1)" title="Retirer la photo">✕</button>
+        </div>
+      </div>
       <span class="cal-label" id="cal-label-1">Choisir un jour *</span>
       <div class="calendar" aria-labelledby="cal-label-1">
         <div class="cal-header">
@@ -1490,6 +1514,17 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
         <input type="text" id="taillePneu2" readonly style="background:rgba(77,166,255,0.06);border-color:var(--gold);color:var(--gold);font-family:var(--font-head);font-weight:700;font-size:1rem;letter-spacing:0.1em;cursor:default">
         <input type="hidden" id="vehiculeHidden2" value="">
         <input type="hidden" id="sourceTailleHidden2" value="">
+      </div>
+      <div class="rdv-group photo-jointe-group" id="photo-jointe-group2">
+        <label>📷 Photo jointe</label>
+        <div class="photo-jointe-inner">
+          <img id="photo-jointe-img2" src="" alt="Photo du pneu jointe">
+          <div class="photo-jointe-info">
+            <div class="photo-jointe-label">Photo du pneu</div>
+            <div class="photo-jointe-status">✓ Sera envoyée avec votre RDV</div>
+          </div>
+          <button class="photo-jointe-remove" onclick="retirerPhotoFormulaire(2)" title="Retirer la photo">✕</button>
+        </div>
       </div>
 
       <div class="rdv-row">
@@ -2037,7 +2072,7 @@ function formatPlaque(input) {
 }
 
 // === SHOW RESULT ===
-function showResult(containerId, data) {
+function showResult(containerId, data, btnLabel) {
   const el = document.getElementById(containerId);
   el.innerHTML = `
     ${data.vehicule ? `
@@ -2059,8 +2094,8 @@ function showResult(containerId, data) {
       <div class="result-info-item"><strong>Diamètre</strong><span>${data.taille.split('R')[1] || '—'}"</span></div>` : ''}
     </div>
     ${data.taille && data.taille !== '—' ? `
-    <button onclick="utilisierTaille('${data.taille}', '${(data.vehicule||'').replace(/'/g,'\'')}')" style="width:100%;margin-bottom:0.8rem;background:var(--gold);color:var(--black);border:none;padding:0.75rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem">
-      ✓ Utiliser cette taille dans le formulaire
+    <button onclick="handleResultBtn(this)" data-taille="${data.taille}" data-vehicule="${(data.vehicule||'').replace(/'/g,"'")}" data-isphoto="${btnLabel && btnLabel.includes('photo') ? 'oui' : ''}" style="width:100%;margin-bottom:0.8rem;background:var(--gold);color:var(--black);border:none;padding:0.75rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem">
+      ${btnLabel || '✓ Utiliser cette taille dans le formulaire'}
     </button>` : ''}
     <div class="result-cta">
       <a href="#contact" class="btn-gold" style="font-size:0.72rem;padding:0.7rem 1.5rem">→ Prendre RDV</a>
@@ -2119,6 +2154,118 @@ function utilisierTaille(taille, vehicule) {
     }, 2500);
   }
 }
+
+// ═══ GESTION BOUTON RÉSULTAT FINDER ═══
+function handleResultBtn(btn) {
+  const taille = btn.dataset.taille;
+  const vehicule = btn.dataset.vehicule || '';
+  const isPhoto = btn.dataset.isphoto === 'oui';
+  if (isPhoto) {
+    joindrPhotoAuFormulaire(taille, vehicule, btn);
+  } else {
+    utilisierTailleBtn(taille, vehicule, btn);
+  }
+}
+
+// Injecter taille depuis bouton (version sans event.target)
+function utilisierTailleBtn(taille, vehicule, btn) {
+  const input1 = document.getElementById('taillePneu');
+  const group1 = document.getElementById('taille-group');
+  if (input1) { input1.value = taille; if (group1) group1.style.display = 'flex'; }
+  if (vehicule) {
+    const nv1 = document.getElementById('nomVehicule'); if (nv1) nv1.value = vehicule;
+    const vh1 = document.getElementById('vehiculeHidden'); if (vh1) vh1.value = vehicule;
+    const vv1 = document.getElementById('vehiculeVisible');
+    if (vv1) { vv1.value = vehicule; document.getElementById('vehicule-group').style.display = 'flex'; }
+  }
+  const input2 = document.getElementById('taillePneu2');
+  const group2 = document.getElementById('taille-group2');
+  if (input2) { input2.value = taille; if (group2) group2.style.display = 'flex'; }
+  if (vehicule) {
+    const nv2 = document.getElementById('nomVehicule2'); if (nv2) nv2.value = vehicule;
+    const vh2 = document.getElementById('vehiculeHidden2'); if (vh2) vh2.value = vehicule;
+    const vv2 = document.getElementById('vehiculeVisible2');
+    if (vv2) { vv2.value = vehicule; document.getElementById('vehicule-group2').style.display = 'flex'; }
+  }
+  const form = document.getElementById('contact') || document.getElementById('contact-mobile');
+  if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (btn) {
+    const origText = btn.textContent;
+    btn.textContent = '✅ Taille ajoutée au formulaire !';
+    btn.style.background = '#4ade80';
+    setTimeout(() => { btn.textContent = origText; btn.style.background = 'var(--gold)'; }, 2500);
+  }
+}
+
+// Joindre la photo de l'onglet "Par Photo" au formulaire RDV
+function joindrPhotoAuFormulaire(taille, vehicule, btn) {
+  // Récupérer la photo analysée (base64 dans l'aperçu)
+  const photoImg = document.getElementById('photoImg');
+  if (photoImg && photoImg.src && photoImg.src.startsWith('data:')) {
+    rdvPhotoBase64 = photoImg.src;
+    rdvPhotoType = photoImg.src.split(';')[0].split(':')[1] || 'image/jpeg';
+  }
+
+  // Remplir la taille si détectée
+  if (taille && taille !== '—' && taille !== 'Photo illisible') {
+    utilisierTailleBtn(taille, vehicule, null);
+  }
+
+  // Afficher la photo dans les deux formulaires
+  if (rdvPhotoBase64) {
+    // Desktop
+    const g1 = document.getElementById('photo-jointe-group');
+    const img1 = document.getElementById('photo-jointe-img');
+    if (g1 && img1) { img1.src = rdvPhotoBase64; g1.style.display = 'block'; }
+    // Mobile
+    const g2 = document.getElementById('photo-jointe-group2');
+    const img2 = document.getElementById('photo-jointe-img2');
+    if (g2 && img2) { img2.src = rdvPhotoBase64; g2.style.display = 'block'; }
+  }
+
+  // Feedback visuel sur aperçu photo dans la section
+  const photoPreview = document.getElementById('photoPreview');
+  if (photoPreview && rdvPhotoBase64) {
+    let badge = document.getElementById('photoJointeBadge');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'photoJointeBadge';
+      badge.style.cssText = 'margin-top:0.6rem;font-size:0.72rem;color:#4ade80;font-family:var(--font-head);font-weight:700;letter-spacing:0.08em;text-align:center;';
+      photoPreview.appendChild(badge);
+    }
+    badge.textContent = '✓ PHOTO JOINTE — sera envoyée avec votre RDV';
+  }
+
+  // Scroller vers le formulaire
+  const form = document.getElementById('contact') || document.getElementById('contact-m');
+  if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Feedback sur le bouton
+  if (btn) {
+    const origText = btn.textContent;
+    btn.textContent = '✅ Photo jointe au formulaire !';
+    btn.style.background = '#4ade80';
+    setTimeout(() => { btn.textContent = origText; btn.style.background = 'var(--gold)'; }, 2500);
+  }
+}
+
+// Retirer la photo du formulaire
+function retirerPhotoFormulaire(n) {
+  rdvPhotoBase64 = '';
+  rdvPhotoType = '';
+  const g = document.getElementById('photo-jointe-group' + (n === 1 ? '' : '2'));
+  if (g) g.style.display = 'none';
+  // Aussi masquer dans l'autre formulaire
+  const other = document.getElementById('photo-jointe-group' + (n === 1 ? '2' : ''));
+  if (other) other.style.display = 'none';
+  // Retirer le badge dans la section finder
+  const badge = document.getElementById('photoJointeBadge');
+  if (badge) badge.textContent = '';
+}
+
+// ═══ CLÉ IMGBB — hébergement photo pour envoi par mail ═══
+// Inscription GRATUITE sur https://imgbb.com → Account → API → obtenez votre clé
+const IMGBB_API_KEY = 'e267ec595087c903cd7d524456be9356';
 
 // Clé RapidAPI SIV — remplacez par votre clé après inscription sur rapidapi.com
 const RAPIDAPI_KEY = 'acc35ab39emsh20570ca1b3c14e8p1f292fjsn3f142a13e238';
@@ -2441,9 +2588,9 @@ function handlePhoto(e) {
       });
       const d = await res.json();
       let txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
-      showResult('photoResult', JSON.parse(txt));
+      showResult('photoResult', JSON.parse(txt), '📷 Joindre la photo au formulaire');
     } catch(e) {
-      showResult('photoResult', { taille: 'Photo illisible', alt: '', pression: '', label: 'Appelez-nous : 02 40 50 70 24' });
+      showResult('photoResult', { taille: 'Photo illisible', alt: '', pression: '', label: 'Appelez-nous : 02 40 50 70 24' }, '📷 Joindre la photo au formulaire');
     }
     document.getElementById('photoLoading').style.display = 'none';
   };
@@ -2902,11 +3049,18 @@ renderCalendar2();
 
 // === FORMULAIRES ===
 function sendRDV(prenom, nom, phone, email, date, heure, service, taille, vehicule, source_taille, successId, btnEl) {
-  if (!prenom || !phone || !date || !heure || !service) {
-    alert('Merci de remplir tous les champs obligatoires : prénom, téléphone, jour, heure et prestation.'); return;
+  const manquants = [];
+  if (!prenom) manquants.push('prénom');
+  if (!phone) manquants.push('téléphone');
+  if (!date) manquants.push('jour (calendrier)');
+  if (!heure) manquants.push('heure');
+  if (!service) manquants.push('prestation');
+  if (manquants.length > 0) {
+    alert('Champ(s) manquant(s) : ' + manquants.join(', '));
+    return;
   }
   const origText = btnEl.textContent;
-  btnEl.textContent = 'Envoi en cours...'; btnEl.disabled = true;
+  btnEl.textContent = rdvPhotoBase64 ? 'Upload photo…' : 'Envoi en cours…'; btnEl.disabled = true;
 
   // Timeout de sécurité : si emailjs ne répond pas en 10s, on affiche quand même le succès
   const safetyTimer = setTimeout(() => {
@@ -2929,20 +3083,38 @@ function sendRDV(prenom, nom, phone, email, date, heure, service, taille, vehicu
   if (typeof emailjs !== 'undefined') {
     // S'assurer que emailjs est bien initialisé
     try { emailjs.init('Y2U7ChVfgAx_7aAAp'); } catch(e) {}
-    emailjs.send('service_hsdt5uk', 'template_yllon3k', {
-      prenom:        prenom,
-      nom:           nom,
-      telephone:     phone,
-      email:         email,
-      date:          date,
-      heure:         heure,
-      service:       service,
-      taille_pneu:   taille || '—',
-      vehicule:      vehicule || '—',
-      source_taille: source_taille || '—',
-      message:       taille ? `Taille : ${taille}${vehicule ? ' · ' + vehicule : ''}` : '—',
-      photo_pneu:    rdvPhotoBase64 || ''
-    }).then(onSuccess).catch(onError);
+    const doSend = (photoUrl) => {
+      emailjs.send('service_hsdt5uk', 'template_yllon3k', {
+        prenom:        prenom,
+        nom:           nom,
+        telephone:     phone,
+        email:         email,
+        date:          date,
+        heure:         heure,
+        service:       service,
+        taille_pneu:   taille || '—',
+        vehicule:      vehicule || '—',
+        source_taille: source_taille || '—',
+        message:       taille ? `Taille : ${taille}${vehicule ? ' · ' + vehicule : ''}` : '—',
+        photo_pneu:    photoUrl ? `<img src="${photoUrl}" style="max-width:400px;border:2px solid #c9a054;" alt="Photo pneu">` : '—',
+        photo_url:     photoUrl || ''
+      }).then(onSuccess).catch(onError);
+    };
+
+    if (rdvPhotoBase64 && IMGBB_API_KEY) {
+      // Uploader la photo sur imgbb et envoyer l'URL
+      const formData = new FormData();
+      formData.append('image', rdvPhotoBase64.split(',')[1]); // base64 sans le préfixe data:...
+      fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+          const url = data?.data?.url || '';
+          doSend(url);
+        })
+        .catch(() => doSend('')); // En cas d'échec imgbb, envoyer sans photo
+    } else {
+      doSend('');
+    }
   } else {
     clearTimeout(safetyTimer);
     setTimeout(onSuccess, 600);
