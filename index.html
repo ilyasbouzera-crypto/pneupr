@@ -2081,6 +2081,11 @@ function showResult(containerId, data, btnLabel) {
       <div>
         <div style="font-family:var(--font-head);font-size:0.6rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase">Véhicule identifié</div>
         <div style="font-family:var(--font-head);font-size:1rem;font-weight:800;color:var(--offwhite);letter-spacing:0.05em;text-transform:uppercase">${data.vehicule}</div>
+        ${data.vin ? `<div style="margin-top:0.35rem;display:flex;align-items:center;gap:0.4rem">
+          <span style="font-family:var(--font-head);font-size:0.55rem;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase">VIN</span>
+          <span style="font-family:'Courier New',monospace;font-size:0.72rem;font-weight:700;color:var(--gold);letter-spacing:0.08em">${data.vin}</span>
+          <button onclick="navigator.clipboard.writeText('${data.vin}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='⧉',1500)})" title="Copier le VIN" style="background:none;border:1px solid var(--gold);color:var(--gold);font-size:0.6rem;padding:0.1rem 0.35rem;cursor:pointer;font-family:var(--font-head);letter-spacing:0.05em;line-height:1.4">⧉</button>
+        </div>` : ''}
       </div>
     </div>` : ''}
     <div class="result-size">${data.taille}</div>
@@ -2434,39 +2439,21 @@ async function searchPlaque() {
   document.getElementById('plaqueResult').classList.remove('show');
 
   try {
-    // ── Essai 1 : auto-ways.net — GET /v1/fr/ (token démo SDK officiel) ──
+    // Essai 1 : RapidAPI
     let json = null;
     try {
-      const res0 = await fetch(
-        `https://app.auto-ways.net/api/v1/fr/?token=${AUTOWAYS_TOKEN}&plaque=${encodeURIComponent(plaque)}&output_lang=fr`,
-        { method: 'GET', headers: { 'Accept': 'application/json' } }
-      );
-      if (res0.ok) {
-        const j0 = await res0.json();
-        console.log('auto-ways.net response:', JSON.stringify(j0));
-        if (j0.error === false && j0.data) {
-          const normalized = normalizeAWN(j0.data);
-          if (normalized) json = { data: normalized };
-        }
+      const res1 = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/get-vehicule-info?token=TokenDemoRapidapi&host_name=https%3A%2F%2Fapiplaqueimmatriculation.com&immatriculation=${encodeURIComponent(plaque)}`, {
+        method: 'GET',
+        headers: { 'x-rapidapi-host': 'api-plaque-immatriculation-siv.p.rapidapi.com', 'x-rapidapi-key': RAPIDAPI_KEY }
+      });
+      if (res1.ok) {
+        const j1 = await res1.json();
+        console.log('RapidAPI response:', JSON.stringify(j1));
+        if (j1.marque || (j1.data && j1.data.marque)) json = j1;
       }
-    } catch(e0) { console.warn('auto-ways.net échoué:', e0.message); }
+    } catch(e1) { console.warn('RapidAPI échouée:', e1.message); }
 
-    // ── Essai 2 : RapidAPI (fallback) ──
-    if (!json) {
-      try {
-        const res1 = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/get-vehicule-info?token=TokenDemoRapidapi&host_name=https%3A%2F%2Fapiplaqueimmatriculation.com&immatriculation=${encodeURIComponent(plaque)}`, {
-          method: 'GET',
-          headers: { 'x-rapidapi-host': 'api-plaque-immatriculation-siv.p.rapidapi.com', 'x-rapidapi-key': RAPIDAPI_KEY }
-        });
-        if (res1.ok) {
-          const j1 = await res1.json();
-          console.log('RapidAPI response:', JSON.stringify(j1));
-          if (j1.marque || (j1.data && j1.data.marque)) json = j1;
-        }
-      } catch(e1) { console.warn('RapidAPI échouée:', e1.message); }
-    }
-
-    // ── Essai 3 : Worker Cloudflare (dernier recours) ──
+    // Essai 2 : Worker Cloudflare → proxy SIV sans CORS
     if (!json) {
       try {
         const res2 = await fetch(ANTHROPIC_WORKER_URL, {
@@ -2489,6 +2476,8 @@ async function searchPlaque() {
     const marque  = vehicle.marque  || '';
     const modele  = vehicle.modele  || vehicle.modele_en || '';
     const version = vehicle.version || vehicle.sra_commercial || '';
+    // VIN : plusieurs noms de champs selon les APIs (auto-ways = AWN_VIN, SIV direct = VIN)
+    const vin     = vehicle.AWN_VIN || vehicle.VIN || vehicle.vin || vehicle.numVin || '';
     // Année : date1erCir_fr ou debut_modele
     const dateStr = vehicle.date1erCir_fr || vehicle.datelerCir_fr || vehicle.date1erCir_us || '';
     const annee   = dateStr ? dateStr.split('-')[0]
@@ -2501,26 +2490,26 @@ async function searchPlaque() {
       .replace(/([0-9]{3}\/[0-9]{2})\s*CM\s*([0-9]+)/i, '$1 R$2')
       .replace(/([0-9]{3}\/[0-9]{2})\s*R\s*([0-9]+)/i, '$1 R$2')
       .trim();
-    console.log('Parsed → marque:', marque, '| modele:', modele, '| annee:', annee, '| tailleBrute:', tailleBrute, '| taillePneu:', taillePneu);
+    console.log('Parsed → marque:', marque, '| modele:', modele, '| annee:', annee, '| vin:', vin, '| tailleBrute:', tailleBrute, '| taillePneu:', taillePneu);
     const vehiculeLabel = (marque || modele)
       ? `${[marque, modele, version].filter(Boolean).join(' ')}${annee ? ' (' + annee + ')' : ''}`.trim()
       : null;
 
     // 1. L'API retourne directement la taille
     if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
-      const result1 = { taille: taillePneu, label: "Taille d'origine", vehicule: vehiculeLabel, pression: '2.3 / 2.1 bar' };
+      const result1 = { taille: taillePneu, label: "Taille d'origine", vehicule: vehiculeLabel, pression: '2.3 / 2.1 bar', vin };
       plaqueCache[plaque] = result1;
       showResult('plaqueResult', result1);
     } else {
       // 2. Cherche dans la base locale avec marque/modèle/année retournés
       const found = findTailleFromDB(marque, modele, annee);
       if (found) {
-        const result2 = { taille: found.taille, label: "Taille d'origine estimée", vehicule: vehiculeLabel, pression: '2.3 / 2.1 bar' };
+        const result2 = { taille: found.taille, label: "Taille d'origine estimée", vehicule: vehiculeLabel, pression: '2.3 / 2.1 bar', vin };
         plaqueCache[plaque] = result2;
         showResult('plaqueResult', result2);
       } else {
         // 3. Véhicule trouvé mais taille inconnue → afficher véhicule + rediriger
-        const result3 = { taille: '—', label: 'Appelez-nous pour confirmation', vehicule: vehiculeLabel, pression: '' };
+        const result3 = { taille: '—', label: 'Appelez-nous pour confirmation', vehicule: vehiculeLabel, pression: '', vin };
         plaqueCache[plaque] = result3;
         showResult('plaqueResult', result3);
       }
@@ -2646,8 +2635,8 @@ function switchMiniTab(tab) {
   document.getElementById('mini-panel-' + tab).classList.add('active');
 }
 
-function showMiniResult(taille, label, vehicule) {
-  console.log('🔵 showMiniResult appelé → taille:', taille, '| vehicule:', vehicule);
+function showMiniResult(taille, label, vehicule, vin) {
+  console.log('🔵 showMiniResult appelé → taille:', taille, '| vehicule:', vehicule, '| vin:', vin);
   miniFTailleFound = taille;
   miniFVehicule = vehicule || '';
   miniFSource = label || '';
@@ -2679,6 +2668,11 @@ function showMiniResult(taille, label, vehicule) {
       <div>
         <div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.12em;font-family:var(--font-head)">Véhicule identifié</div>
         <div id="miniFVehiculeText" style="font-family:var(--font-head);font-size:0.8rem;font-weight:800;color:var(--offwhite);text-transform:uppercase;letter-spacing:0.05em">${vehicule}</div>
+        ${vin ? `<div style="display:flex;align-items:center;gap:0.35rem;margin-top:0.25rem">
+          <span style="font-family:var(--font-head);font-size:0.5rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em">VIN</span>
+          <span style="font-family:'Courier New',monospace;font-size:0.65rem;font-weight:700;color:var(--gold);letter-spacing:0.06em">${vin}</span>
+          <button onclick="navigator.clipboard.writeText('${vin}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='⧉',1500)})" title="Copier le VIN" style="background:none;border:1px solid var(--gold);color:var(--gold);font-size:0.55rem;padding:0.08rem 0.3rem;cursor:pointer;font-family:var(--font-head);line-height:1.4">⧉</button>
+        </div>` : ''}
       </div>
     </div>` : ''}
     <div style="font-family:var(--font-head);font-size:0.55rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.2rem">Taille trouvée</div>
@@ -2731,52 +2725,9 @@ function rdvUpdateAnnees() {
   if (marque && modele && catalogueVehicules[marque]?.[modele]) catalogueVehicules[marque][modele].forEach(a => anneeEl.innerHTML += `<option>${a}</option>`);
 }
 
-// ── Token démo auto-ways.net (SDK officiel : autowaysnet/api-plaque-immatriculation-Client-SDK) ──
-// Token démo public fourni dans le swagger.yaml officiel du SDK
-// Pour la production : demander un token sur https://auto-ways.net/demo
-const AUTOWAYS_TOKEN = '4a486e221ea6d4a888671242b5fe0fed';
-
-// Normalise une réponse auto-ways.net (champs AWN_*) vers le format attendu par le reste du code
-function normalizeAWN(d) {
-  if (!d || !d.AWN_marque) return null;
-  // La date est au format DD/MM/YYYY → on extrait l'année (index 2)
-  const dateStr = d.AWN_date_mise_en_circulation || '';
-  const parts   = dateStr.split('/');
-  const annee   = parts.length === 3 ? parts[2] : '';
-  return {
-    marque          : d.AWN_marque        || '',
-    modele          : d.AWN_modele        || '',
-    modele_en       : d.AWN_modele_etude  || '',
-    version         : d.AWN_version       || '',
-    date1erCir_fr   : dateStr,
-    debut_modele    : annee ? annee + '-01' : '',
-    // Pas de taille pneu directe dans cette API → findTailleFromDB prendra le relai
-    energie         : d.AWN_energie       || '',
-    puissance_ch    : d.AWN_puissance_chevaux || '',
-    couleur         : d.AWN_couleur       || ''
-  };
-}
-
-// ── Fonction SIV partagée (auto-ways.net + RapidAPI + Worker fallback) ──
+// ── Fonction SIV partagée (RapidAPI + Worker fallback) ──
 async function sivLookup(plaque) {
-  // ── Essai 1 : auto-ways.net — API officielle FR (SDK : autowaysnet/api-plaque-immatriculation-Client-SDK) ──
-  // Endpoint : GET https://app.auto-ways.net/api/v1/fr/?token=TOKEN&plaque=PLAQUE&output_lang=fr
-  try {
-    const r0 = await fetch(
-      `https://app.auto-ways.net/api/v1/fr/?token=${AUTOWAYS_TOKEN}&plaque=${encodeURIComponent(plaque)}&output_lang=fr`,
-      { method: 'GET', headers: { 'Accept': 'application/json' } }
-    );
-    if (r0.ok) {
-      const j = await r0.json();
-      console.log('auto-ways.net response:', JSON.stringify(j));
-      if (j.error === false && j.data) {
-        const normalized = normalizeAWN(j.data);
-        if (normalized) return normalized;
-      }
-    }
-  } catch(e) { console.warn('auto-ways.net:', e.message); }
-
-  // ── Essai 2 : RapidAPI (fallback) ──
+  // Essai 1 : RapidAPI
   try {
     const r1 = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/get-vehicule-info?token=TokenDemoRapidapi&host_name=https%3A%2F%2Fapiplaqueimmatriculation.com&immatriculation=${encodeURIComponent(plaque)}`, {
       method: 'GET',
@@ -2788,7 +2739,7 @@ async function sivLookup(plaque) {
     }
   } catch(e) { console.warn('RapidAPI:', e.message); }
 
-  // ── Essai 3 : Worker Cloudflare → proxy SIV (dernier recours) ──
+  // Essai 2 : Worker → apiplaqueimmatriculation.com
   try {
     const r2 = await fetch(ANTHROPIC_WORKER_URL, {
       method: 'POST',
@@ -2801,7 +2752,7 @@ async function sivLookup(plaque) {
     }
   } catch(e) { console.warn('Worker SIV:', e.message); }
 
-  return null; // Les trois ont échoué
+  return null; // Les deux ont échoué
 }
 
 async function rdvSearchPlaque() {
@@ -2817,6 +2768,8 @@ async function rdvSearchPlaque() {
     const marque  = String(vehicle.marque  || vehicle.Marque  || vehicle.make   || '').trim();
     const modele  = String(vehicle.modele  || vehicle.modele_en || vehicle.model || '').trim();
     const version = String(vehicle.sra_commercial || vehicle.version || '').trim();
+    // === VIN ===
+    const vin = String(vehicle.AWN_VIN || vehicle.VIN || vehicle.vin || vehicle.numVin || '').trim();
 
     // === ANNEE : chercher la partie à 4 chiffres dans toutes les dates ===
     const dateRaw = String(vehicle.date1erCir_fr || vehicle.date1erCir_us || vehicle.debut_modele || '');
@@ -2838,18 +2791,18 @@ async function rdvSearchPlaque() {
       ? partsLabel.join(' ') + (annee ? ` (${annee})` : '')
       : null;
 
-    console.log('✅ vehicule:', vehiculeLabel, '| taille:', tailleBrute);
+    console.log('✅ vehicule:', vehiculeLabel, '| vin:', vin, '| taille:', tailleBrute);
 
     const taillePneu = tailleBrute
       .replace(/([0-9]{3}\/[0-9]{2})\s*[CR]M?\s*([0-9]+)/i, '$1 R$2')
       .trim();
 
     if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
-      showMiniResult(taillePneu, "Taille d'origine", vehiculeLabel);
+      showMiniResult(taillePneu, "Taille d'origine", vehiculeLabel, vin);
     } else {
       const found = findTailleFromDB(marque, modele, annee);
       if (found) {
-        showMiniResult(found.taille, "Taille estimée", vehiculeLabel);
+        showMiniResult(found.taille, "Taille estimée", vehiculeLabel, vin);
       } else if (marque && modele) {
         try {
           const res = await fetch(ANTHROPIC_WORKER_URL, {
@@ -2860,12 +2813,12 @@ async function rdvSearchPlaque() {
           const d = await res.json();
           const txt = (d.content || []).map(c => c.text || '').join('').replace(/```json|```/g,'').trim();
           const r = JSON.parse(txt);
-          showMiniResult(r.taille || '195/55 R16', "Taille estimée par IA", vehiculeLabel);
+          showMiniResult(r.taille || '195/55 R16', "Taille estimée par IA", vehiculeLabel, vin);
         } catch(aiErr) {
-          showMiniResult('195/55 R16', 'Taille à confirmer', vehiculeLabel);
+          showMiniResult('195/55 R16', 'Taille à confirmer', vehiculeLabel, vin);
         }
       } else {
-        showMiniResult('205/55 R16', 'Taille à confirmer — appelez-nous', vehiculeLabel);
+        showMiniResult('205/55 R16', 'Taille à confirmer — appelez-nous', vehiculeLabel, vin);
       }
     }
   } catch(e) {
