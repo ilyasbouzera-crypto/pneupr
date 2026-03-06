@@ -2004,7 +2004,11 @@ footer { background: var(--carbon2); color: var(--text-dim); padding: 4rem 5vw 2
 <div class="mobile-sticky-bar" role="navigation" aria-label="Actions rapides mobile">
   <div class="mobile-sticky-bar-inner">
     <a href="tel:+33240507024" class="msb-btn msb-call" aria-label="Appeler PneuPro Nantes">📞 Appeler</a>
-    <a href="#contact-mobile" class="msb-btn msb-rdv" aria-label="Prendre rendez-vous en ligne">📅 Prendre RDV</a>
+    <button class="msb-btn msb-ai" onclick="toggleAIChat()" aria-label="Assistant IA PneuPro" id="msb-ai-btn">
+      🤖 Alex IA
+      <span class="msb-ai-dot" id="msb-ai-dot" style="display:none"></span>
+    </button>
+    <a href="#contact-mobile" class="msb-btn msb-rdv" aria-label="Prendre rendez-vous en ligne">📅 RDV</a>
   </div>
 </div>
 
@@ -2081,11 +2085,6 @@ function showResult(containerId, data, btnLabel) {
       <div>
         <div style="font-family:var(--font-head);font-size:0.6rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase">Véhicule identifié</div>
         <div style="font-family:var(--font-head);font-size:1rem;font-weight:800;color:var(--offwhite);letter-spacing:0.05em;text-transform:uppercase">${data.vehicule}</div>
-        ${data.vin ? `<div style="margin-top:0.35rem;display:flex;align-items:center;gap:0.4rem">
-          <span style="font-family:var(--font-head);font-size:0.55rem;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase">VIN</span>
-          <span style="font-family:'Courier New',monospace;font-size:0.72rem;font-weight:700;color:var(--gold);letter-spacing:0.08em">${data.vin}</span>
-          <button onclick="navigator.clipboard.writeText('${data.vin}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='⧉',1500)})" title="Copier le VIN" style="background:none;border:1px solid var(--gold);color:var(--gold);font-size:0.6rem;padding:0.1rem 0.35rem;cursor:pointer;font-family:var(--font-head);letter-spacing:0.05em;line-height:1.4">⧉</button>
-        </div>` : ''}
       </div>
     </div>` : ''}
     <div class="result-size">${data.taille}</div>
@@ -2476,8 +2475,6 @@ async function searchPlaque() {
     const marque  = vehicle.marque  || '';
     const modele  = vehicle.modele  || vehicle.modele_en || '';
     const version = vehicle.version || vehicle.sra_commercial || '';
-    // VIN : plusieurs noms de champs selon les APIs (auto-ways = AWN_VIN, SIV direct = VIN)
-    const vin     = vehicle.AWN_VIN || vehicle.VIN || vehicle.vin || vehicle.numVin || '';
     // Année : date1erCir_fr ou debut_modele
     const dateStr = vehicle.date1erCir_fr || vehicle.datelerCir_fr || vehicle.date1erCir_us || '';
     const annee   = dateStr ? dateStr.split('-')[0]
@@ -2490,26 +2487,26 @@ async function searchPlaque() {
       .replace(/([0-9]{3}\/[0-9]{2})\s*CM\s*([0-9]+)/i, '$1 R$2')
       .replace(/([0-9]{3}\/[0-9]{2})\s*R\s*([0-9]+)/i, '$1 R$2')
       .trim();
-    console.log('Parsed → marque:', marque, '| modele:', modele, '| annee:', annee, '| vin:', vin, '| tailleBrute:', tailleBrute, '| taillePneu:', taillePneu);
+    console.log('Parsed → marque:', marque, '| modele:', modele, '| annee:', annee, '| tailleBrute:', tailleBrute, '| taillePneu:', taillePneu);
     const vehiculeLabel = (marque || modele)
       ? `${[marque, modele, version].filter(Boolean).join(' ')}${annee ? ' (' + annee + ')' : ''}`.trim()
       : null;
 
     // 1. L'API retourne directement la taille
     if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
-      const result1 = { taille: taillePneu, label: "Taille d'origine", vehicule: vehiculeLabel, pression: '2.3 / 2.1 bar', vin };
+      const result1 = { taille: taillePneu, label: "Taille d'origine", vehicule: vehiculeLabel, pression: '2.3 / 2.1 bar' };
       plaqueCache[plaque] = result1;
       showResult('plaqueResult', result1);
     } else {
       // 2. Cherche dans la base locale avec marque/modèle/année retournés
       const found = findTailleFromDB(marque, modele, annee);
       if (found) {
-        const result2 = { taille: found.taille, label: "Taille d'origine estimée", vehicule: vehiculeLabel, pression: '2.3 / 2.1 bar', vin };
+        const result2 = { taille: found.taille, label: "Taille d'origine estimée", vehicule: vehiculeLabel, pression: '2.3 / 2.1 bar' };
         plaqueCache[plaque] = result2;
         showResult('plaqueResult', result2);
       } else {
         // 3. Véhicule trouvé mais taille inconnue → afficher véhicule + rediriger
-        const result3 = { taille: '—', label: 'Appelez-nous pour confirmation', vehicule: vehiculeLabel, pression: '', vin };
+        const result3 = { taille: '—', label: 'Appelez-nous pour confirmation', vehicule: vehiculeLabel, pression: '' };
         plaqueCache[plaque] = result3;
         showResult('plaqueResult', result3);
       }
@@ -2635,8 +2632,8 @@ function switchMiniTab(tab) {
   document.getElementById('mini-panel-' + tab).classList.add('active');
 }
 
-function showMiniResult(taille, label, vehicule, vin) {
-  console.log('🔵 showMiniResult appelé → taille:', taille, '| vehicule:', vehicule, '| vin:', vin);
+function showMiniResult(taille, label, vehicule) {
+  console.log('🔵 showMiniResult appelé → taille:', taille, '| vehicule:', vehicule);
   miniFTailleFound = taille;
   miniFVehicule = vehicule || '';
   miniFSource = label || '';
@@ -2668,11 +2665,6 @@ function showMiniResult(taille, label, vehicule, vin) {
       <div>
         <div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.12em;font-family:var(--font-head)">Véhicule identifié</div>
         <div id="miniFVehiculeText" style="font-family:var(--font-head);font-size:0.8rem;font-weight:800;color:var(--offwhite);text-transform:uppercase;letter-spacing:0.05em">${vehicule}</div>
-        ${vin ? `<div style="display:flex;align-items:center;gap:0.35rem;margin-top:0.25rem">
-          <span style="font-family:var(--font-head);font-size:0.5rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em">VIN</span>
-          <span style="font-family:'Courier New',monospace;font-size:0.65rem;font-weight:700;color:var(--gold);letter-spacing:0.06em">${vin}</span>
-          <button onclick="navigator.clipboard.writeText('${vin}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='⧉',1500)})" title="Copier le VIN" style="background:none;border:1px solid var(--gold);color:var(--gold);font-size:0.55rem;padding:0.08rem 0.3rem;cursor:pointer;font-family:var(--font-head);line-height:1.4">⧉</button>
-        </div>` : ''}
       </div>
     </div>` : ''}
     <div style="font-family:var(--font-head);font-size:0.55rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.2rem">Taille trouvée</div>
@@ -2768,8 +2760,6 @@ async function rdvSearchPlaque() {
     const marque  = String(vehicle.marque  || vehicle.Marque  || vehicle.make   || '').trim();
     const modele  = String(vehicle.modele  || vehicle.modele_en || vehicle.model || '').trim();
     const version = String(vehicle.sra_commercial || vehicle.version || '').trim();
-    // === VIN ===
-    const vin = String(vehicle.AWN_VIN || vehicle.VIN || vehicle.vin || vehicle.numVin || '').trim();
 
     // === ANNEE : chercher la partie à 4 chiffres dans toutes les dates ===
     const dateRaw = String(vehicle.date1erCir_fr || vehicle.date1erCir_us || vehicle.debut_modele || '');
@@ -2791,18 +2781,18 @@ async function rdvSearchPlaque() {
       ? partsLabel.join(' ') + (annee ? ` (${annee})` : '')
       : null;
 
-    console.log('✅ vehicule:', vehiculeLabel, '| vin:', vin, '| taille:', tailleBrute);
+    console.log('✅ vehicule:', vehiculeLabel, '| taille:', tailleBrute);
 
     const taillePneu = tailleBrute
       .replace(/([0-9]{3}\/[0-9]{2})\s*[CR]M?\s*([0-9]+)/i, '$1 R$2')
       .trim();
 
     if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
-      showMiniResult(taillePneu, "Taille d'origine", vehiculeLabel, vin);
+      showMiniResult(taillePneu, "Taille d'origine", vehiculeLabel);
     } else {
       const found = findTailleFromDB(marque, modele, annee);
       if (found) {
-        showMiniResult(found.taille, "Taille estimée", vehiculeLabel, vin);
+        showMiniResult(found.taille, "Taille estimée", vehiculeLabel);
       } else if (marque && modele) {
         try {
           const res = await fetch(ANTHROPIC_WORKER_URL, {
@@ -2813,12 +2803,12 @@ async function rdvSearchPlaque() {
           const d = await res.json();
           const txt = (d.content || []).map(c => c.text || '').join('').replace(/```json|```/g,'').trim();
           const r = JSON.parse(txt);
-          showMiniResult(r.taille || '195/55 R16', "Taille estimée par IA", vehiculeLabel, vin);
+          showMiniResult(r.taille || '195/55 R16', "Taille estimée par IA", vehiculeLabel);
         } catch(aiErr) {
-          showMiniResult('195/55 R16', 'Taille à confirmer', vehiculeLabel, vin);
+          showMiniResult('195/55 R16', 'Taille à confirmer', vehiculeLabel);
         }
       } else {
-        showMiniResult('205/55 R16', 'Taille à confirmer — appelez-nous', vehiculeLabel, vin);
+        showMiniResult('205/55 R16', 'Taille à confirmer — appelez-nous', vehiculeLabel);
       }
     }
   } catch(e) {
@@ -3427,6 +3417,554 @@ window.addEventListener('scroll', () => {
     ticking = true;
   }
 });
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     AGENT IA PNEUPRO — Chat + RDV automatique
+     Powered by Claude via ANTHROPIC_WORKER_URL
+════════════════════════════════════════════════════════════════ -->
+<style>
+/* ── Bouton flottant — desktop only ── */
+#ai-chat-btn {
+  position: fixed; bottom: 1.5rem; left: 1.5rem; z-index: 9999;
+  width: 62px; height: 62px; border-radius: 50%;
+  background: linear-gradient(135deg, #4da6ff 0%, #1a6fd4 100%);
+  border: none; cursor: pointer; box-shadow: 0 4px 24px rgba(77,166,255,0.45);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  font-size: 1.6rem;
+}
+#ai-chat-btn:hover { transform: scale(1.08); box-shadow: 0 6px 32px rgba(77,166,255,0.6); }
+#ai-chat-btn .notif-dot {
+  position: absolute; top: 4px; right: 4px; width: 14px; height: 14px;
+  background: #f87171; border-radius: 50%; border: 2px solid #07090f;
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+
+/* ── Panneau chat — desktop ── */
+#ai-chat-panel {
+  position: fixed; bottom: 5.5rem; left: 1.5rem; z-index: 9998;
+  width: min(400px, calc(100vw - 2rem));
+  height: min(600px, calc(100vh - 7rem));
+  background: #0d1117; border: 1px solid rgba(77,166,255,0.25);
+  border-radius: 16px; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+  transform: translateY(20px) scale(0.95); opacity: 0;
+  pointer-events: none; transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  overflow: hidden;
+}
+#ai-chat-panel.open {
+  transform: translateY(0) scale(1); opacity: 1; pointer-events: all;
+}
+
+/* ── MOBILE : bouton IA dans la barre sticky ── */
+@media (max-width: 600px) {
+  /* Cacher le bouton flottant desktop */
+  #ai-chat-btn { display: none !important; }
+
+  /* Bouton IA dans la sticky bar */
+  .msb-ai {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+    padding: 0.85rem 0.5rem; font-family: var(--font-head); font-weight: 800; font-size: 0.72rem;
+    letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none; border: none;
+    cursor: pointer; min-height: 44px; transition: opacity 0.15s;
+    background: #131b27; color: #4da6ff; border: 1px solid rgba(77,166,255,0.35);
+    position: relative;
+  }
+  .msb-ai:active { opacity: 0.8; }
+  .msb-ai .msb-ai-dot {
+    position: absolute; top: 6px; right: 6px; width: 8px; height: 8px;
+    background: #f87171; border-radius: 50%; border: 1.5px solid #07090f;
+  }
+
+  /* Panel chat : quasi plein écran sur mobile */
+  #ai-chat-panel {
+    position: fixed;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    left: 0; right: 0;
+    width: 100%;
+    height: calc(100vh - 64px - env(safe-area-inset-bottom) - env(safe-area-inset-top));
+    border-radius: 16px 16px 0 0;
+    border-left: none; border-right: none; border-bottom: none;
+    transform: translateY(100%); opacity: 1;
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  #ai-chat-panel.open {
+    transform: translateY(0); opacity: 1;
+  }
+
+  /* Messages : padding plus généreux sur mobile */
+  #ai-chat-messages { padding: 1.2rem 1rem; gap: 1rem; }
+
+  /* Bulles plus lisibles */
+  .ai-msg-bubble { font-size: 0.85rem; padding: 0.75rem 1rem; }
+
+  /* Input zone sécurisée */
+  #ai-chat-input-zone { padding: 0.75rem 1rem; }
+  #ai-chat-input { font-size: 16px; /* évite le zoom iOS */ padding: 0.75rem 1rem; }
+  #ai-chat-send { width: 48px; height: 48px; font-size: 1.1rem; }
+
+  /* Suggestions sur une seule ligne scrollable */
+  .ai-suggestions { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .ai-suggestions::-webkit-scrollbar { display: none; }
+  .ai-sugg-btn { white-space: nowrap; flex-shrink: 0; font-size: 0.72rem; padding: 0.4rem 0.8rem; min-height: 36px; }
+
+  /* Header plus compact */
+  #ai-chat-header { padding: 0.85rem 1rem; }
+  .ai-header-name { font-size: 0.9rem; }
+
+  /* Carte RDV */
+  .ai-rdv-btn { min-height: 48px; font-size: 0.72rem; }
+
+  /* Hint caché sur mobile (pas besoin) */
+  .ai-input-hint { display: none; }
+}
+
+/* ── Header ── */
+#ai-chat-header {
+  background: linear-gradient(135deg, #0f1a2e 0%, #0d1117 100%);
+  border-bottom: 1px solid rgba(77,166,255,0.2);
+  padding: 1rem 1.2rem; display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;
+}
+.ai-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: linear-gradient(135deg,#4da6ff,#1a6fd4);
+  display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+  flex-shrink: 0; position: relative;
+}
+.ai-avatar::after {
+  content:''; position:absolute; bottom:1px; right:1px;
+  width:10px; height:10px; background:#4ade80; border-radius:50%; border:2px solid #0d1117;
+}
+.ai-header-info { flex: 1; }
+.ai-header-name { font-family:var(--font-head); font-size:0.85rem; font-weight:800; color:#e8eaf0; letter-spacing:0.05em; }
+.ai-header-status { font-size:0.65rem; color:#4da6ff; margin-top:0.1rem; }
+#ai-chat-close {
+  background:none; border:none; color:rgba(255,255,255,0.4); font-size:1.2rem; cursor:pointer;
+  padding:0.25rem; transition:color 0.2s; line-height:1;
+}
+#ai-chat-close:hover { color:#e8eaf0; }
+
+/* ── Messages ── */
+#ai-chat-messages {
+  flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;
+  scroll-behavior: smooth;
+}
+#ai-chat-messages::-webkit-scrollbar { width:4px; }
+#ai-chat-messages::-webkit-scrollbar-track { background:transparent; }
+#ai-chat-messages::-webkit-scrollbar-thumb { background:rgba(77,166,255,0.3); border-radius:2px; }
+
+.ai-msg { display: flex; gap: 0.5rem; max-width: 88%; animation: fadeUp 0.2s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.ai-msg.user { align-self: flex-end; flex-direction: row-reverse; }
+.ai-msg.bot  { align-self: flex-start; }
+
+.ai-msg-avatar {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; margin-top: 2px;
+  background: linear-gradient(135deg,#4da6ff,#1a6fd4);
+  display: flex; align-items: center; justify-content: center; font-size: 0.75rem;
+}
+.ai-msg.user .ai-msg-avatar { background: #1e2a3a; }
+
+.ai-msg-bubble {
+  padding: 0.65rem 0.9rem; border-radius: 14px;
+  font-size: 0.78rem; line-height: 1.6; color: #c8cdd8;
+}
+.ai-msg.bot  .ai-msg-bubble { background: #131b27; border: 1px solid rgba(77,166,255,0.12); border-bottom-left-radius: 4px; }
+.ai-msg.user .ai-msg-bubble { background: linear-gradient(135deg,#1a3d6e,#153060); color: #dce8ff; border-bottom-right-radius: 4px; }
+.ai-msg-bubble strong { color: #4da6ff; font-weight: 700; }
+.ai-msg-bubble em { color: #f5c842; font-style: normal; font-weight: 600; }
+
+/* Suggestions rapides */
+.ai-suggestions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem; }
+.ai-sugg-btn {
+  background: rgba(77,166,255,0.1); border: 1px solid rgba(77,166,255,0.3);
+  color: #4da6ff; font-size: 0.67rem; padding: 0.3rem 0.65rem; border-radius: 20px;
+  cursor: pointer; font-family: var(--font-head); font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; transition: all 0.15s; white-space: nowrap;
+}
+.ai-sugg-btn:hover { background: rgba(77,166,255,0.2); border-color: #4da6ff; }
+
+/* Typing indicator */
+.ai-typing { display: flex; gap: 4px; padding: 0.65rem 0.9rem; align-items: center; }
+.ai-typing span {
+  width: 6px; height: 6px; background: #4da6ff; border-radius: 50%; opacity: 0.4;
+  animation: typing-dot 1.2s infinite;
+}
+.ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+.ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typing-dot { 0%,80%,100%{transform:scale(1);opacity:0.4} 40%{transform:scale(1.3);opacity:1} }
+
+/* Carte RDV rapide */
+.ai-rdv-card {
+  background: linear-gradient(135deg, rgba(245,200,66,0.08), rgba(245,200,66,0.04));
+  border: 1px solid rgba(245,200,66,0.3); border-radius: 10px;
+  padding: 0.75rem; margin-top: 0.4rem;
+}
+.ai-rdv-card .rdv-title { font-family:var(--font-head); font-size:0.65rem; font-weight:800; color:#f5c842; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.5rem; }
+.ai-rdv-btn {
+  display:block; width:100%; margin-top:0.5rem;
+  background: linear-gradient(135deg,#f5c842,#d4a800); color:#07090f;
+  border:none; padding:0.6rem; font-family:var(--font-head); font-weight:800;
+  font-size:0.65rem; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer;
+  border-radius:6px; transition: transform 0.15s;
+}
+.ai-rdv-btn:hover { transform: scale(1.02); }
+
+/* Input zone */
+#ai-chat-input-zone {
+  padding: 0.85rem 1rem; border-top: 1px solid rgba(77,166,255,0.15); flex-shrink: 0;
+  background: #0a0e16;
+}
+#ai-chat-input-row { display: flex; gap: 0.5rem; align-items: flex-end; }
+#ai-chat-input {
+  flex: 1; background: #131b27; border: 1px solid rgba(77,166,255,0.2);
+  border-radius: 10px; padding: 0.65rem 0.85rem; color: #e8eaf0;
+  font-size: 0.8rem; font-family: inherit; resize: none; min-height: 42px; max-height: 100px;
+  line-height: 1.5; transition: border-color 0.2s; outline: none;
+}
+#ai-chat-input:focus { border-color: rgba(77,166,255,0.5); }
+#ai-chat-input::placeholder { color: rgba(200,210,220,0.35); }
+#ai-chat-send {
+  width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg,#4da6ff,#1a6fd4); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 1rem;
+  transition: transform 0.15s, opacity 0.15s;
+}
+#ai-chat-send:hover { transform: scale(1.05); }
+#ai-chat-send:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.ai-input-hint { font-size: 0.6rem; color: rgba(200,210,220,0.3); margin-top: 0.4rem; text-align:center; }
+</style>
+
+<!-- Bouton flottant -->
+<button id="ai-chat-btn" onclick="toggleAIChat()" aria-label="Ouvrir l'assistant PneuPro">
+  🤖
+  <span class="notif-dot" id="ai-notif-dot"></span>
+</button>
+
+<!-- Panneau chat -->
+<div id="ai-chat-panel" role="dialog" aria-label="Assistant IA PneuPro">
+  <div id="ai-chat-header">
+    <div class="ai-avatar">🤖</div>
+    <div class="ai-header-info">
+      <div class="ai-header-name">Alex — Assistant PneuPro</div>
+      <div class="ai-header-status" id="ai-status-text">En ligne · Répond en quelques secondes</div>
+    </div>
+    <button id="ai-chat-close" onclick="toggleAIChat()" aria-label="Fermer">✕</button>
+  </div>
+
+  <div id="ai-chat-messages"></div>
+
+  <div id="ai-chat-input-zone">
+    <div id="ai-chat-input-row">
+      <textarea id="ai-chat-input" placeholder="Posez votre question ou entrez votre plaque…" rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage()}"
+        oninput="autoResizeInput(this)"></textarea>
+      <button id="ai-chat-send" onclick="sendAIMessage()" aria-label="Envoyer">➤</button>
+    </div>
+    <div class="ai-input-hint">Entrée pour envoyer · Shift+Entrée pour nouvelle ligne</div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  AGENT IA PNEUPRO
+// ══════════════════════════════════════════════
+
+const AI_SYSTEM_PROMPT = `Tu es Alex, l'assistant IA de PneuPro Nantes, un atelier de pneumatiques expert situé au 174 Boulevard Jules Verne, 44000 Nantes.
+
+INFORMATIONS ATELIER :
+- Téléphone : 02 40 50 70 24
+- Horaires : Lundi–Vendredi 8h–19h, Samedi 8h30–17h30, Dimanche fermé
+- Note Google : 4.9/5 sur 200+ avis
+- Fondé en 2012
+
+SERVICES ET TARIFS :
+- Réparation crevaison : dès 15 € (20 min chrono, norme ETRTO, flancs endommagés non réparables)
+- Montage / Démontage pneu : dès 25 € (jantes acier ou alu jusqu'à 18"), 35 € pour 19"–22"
+- Équilibrage : 12 €/roue (inclus dans les forfaits montage)
+- Permutation 4 roues : 40 €
+- Parallélisme AV (2 roues) : 60 €
+- Parallélisme 4 roues complet : 90 €
+- Gonflage azote : 5 €/roue
+- Stockage pneus hors-saison : 49 €/saison
+- Forfait hivernage (4 pneus hiver + équilibrage + stockage) : 149 €
+
+RÈGLES DE CONVERSATION :
+1. Réponds toujours en français, de façon concise et professionnelle.
+2. Si un client mentionne une plaque d'immatriculation (format AA-123-BB ou 1234 AB 75), réponds que tu vas identifier son véhicule et appelle la fonction LOOKUP_PLATE.
+3. Si un client veut prendre RDV, recueille : service souhaité, date/heure préférée, prénom, téléphone. Ensuite propose de préremplir le formulaire en ligne.
+4. Si tu ne peux pas répondre à quelque chose, dirige vers le 02 40 50 70 24.
+5. Ne mentionne jamais d'autres garages ou concurrents.
+6. Sois chaleureux mais efficace. Pas de longueurs inutiles.
+7. Utilise du markdown léger : **gras** pour les prix et infos clés.
+8. Quand tu proposes un RDV, termine par le tag spécial : [RDV:service|prenom|tel] avec les infos recueillies.`;
+
+let aiChatOpen = false;
+let aiConversation = [];
+let aiIsTyping = false;
+let aiRdvData = {};
+
+function toggleAIChat() {
+  aiChatOpen = !aiChatOpen;
+  const panel = document.getElementById('ai-chat-panel');
+  const dot   = document.getElementById('ai-notif-dot');
+  const msbDot = document.getElementById('msb-ai-dot');
+  panel.classList.toggle('open', aiChatOpen);
+  if (dot) dot.style.display = 'none';
+  if (msbDot) msbDot.style.display = 'none';
+  if (aiChatOpen && aiConversation.length === 0) {
+    setTimeout(() => aiGreet(), 300);
+  }
+  if (aiChatOpen) {
+    setTimeout(() => document.getElementById('ai-chat-input').focus(), 350);
+  }
+}
+
+function aiGreet() {
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bonjour' : 'Bonsoir';
+  const isOpen = (hour >= 8 && hour < 19);
+  addAIMessage('bot', 
+    `${greeting} ! 👋 Je suis **Alex**, l'assistant de **PneuPro Nantes**.\n\n` +
+    (isOpen 
+      ? `L'atelier est **ouvert** en ce moment — nous pouvons vous prendre en charge rapidement.`
+      : `L'atelier est actuellement **fermé** (ouvert lun–ven 8h–19h, sam 8h30–17h30). Je peux quand même vous renseigner et préparer votre RDV.`) +
+    `\n\nComment puis-je vous aider ?`,
+    ['💰 Tarifs', '📅 Prendre RDV', '🔧 Crevaison urgente', '❄️ Pneus hiver', '🚗 Identifier mon véhicule']
+  );
+}
+
+function addAIMessage(role, text, suggestions = []) {
+  const msgs = document.getElementById('ai-chat-messages');
+  const div = document.createElement('div');
+  div.className = `ai-msg ${role}`;
+
+  const avatarDiv = document.createElement('div');
+  avatarDiv.className = 'ai-msg-avatar';
+  avatarDiv.textContent = role === 'bot' ? '🤖' : '👤';
+
+  const bubbleDiv = document.createElement('div');
+  bubbleDiv.className = 'ai-msg-bubble';
+  bubbleDiv.innerHTML = formatAIText(text);
+
+  // Suggestions rapides
+  if (suggestions.length > 0) {
+    const suggDiv = document.createElement('div');
+    suggDiv.className = 'ai-suggestions';
+    suggestions.forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = 'ai-sugg-btn';
+      btn.textContent = s;
+      btn.onclick = () => { document.getElementById('ai-chat-input').value = s; sendAIMessage(); };
+      suggDiv.appendChild(btn);
+    });
+    bubbleDiv.appendChild(suggDiv);
+  }
+
+  div.appendChild(avatarDiv);
+  div.appendChild(bubbleDiv);
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Extraire et traiter les tags RDV
+  if (role === 'bot') processAITags(text, bubbleDiv);
+}
+
+function formatAIText(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/_(.+?)_/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+}
+
+function processAITags(text, container) {
+  const rdvMatch = text.match(/\[RDV:([^\]]+)\]/);
+  if (rdvMatch) {
+    const parts = rdvMatch[1].split('|');
+    const service = parts[0] || '';
+    const prenom  = parts[1] || '';
+    const tel     = parts[2] || '';
+    aiRdvData = { service, prenom, tel };
+
+    const card = document.createElement('div');
+    card.className = 'ai-rdv-card';
+    card.innerHTML = `
+      <div class="rdv-title">📅 Récapitulatif RDV</div>
+      ${service ? `<div style="font-size:0.72rem;color:#c8cdd8;margin-bottom:0.2rem">🔧 <strong>${service}</strong></div>` : ''}
+      ${prenom  ? `<div style="font-size:0.72rem;color:#c8cdd8;margin-bottom:0.2rem">👤 <strong>${prenom}</strong></div>` : ''}
+      ${tel     ? `<div style="font-size:0.72rem;color:#c8cdd8;margin-bottom:0.2rem">📞 <strong>${tel}</strong></div>` : ''}
+      <button class="ai-rdv-btn" onclick="aiPrefillAndGoRDV()">✓ Confirmer & ouvrir le formulaire</button>`;
+    container.appendChild(card);
+  }
+}
+
+function aiPrefillAndGoRDV() {
+  // Préremplir formulaire desktop
+  ['service','service2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && aiRdvData.service) {
+      for (const opt of el.options) {
+        if (opt.value.toLowerCase().includes(aiRdvData.service.toLowerCase().split(' ')[0])) {
+          el.value = opt.value; break;
+        }
+      }
+    }
+  });
+  ['nom','nom2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && aiRdvData.prenom) el.value = aiRdvData.prenom;
+  });
+  ['tel','tel2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && aiRdvData.tel) el.value = aiRdvData.tel;
+  });
+
+  toggleAIChat();
+  const contact = document.getElementById('contact') || document.getElementById('contact-mobile');
+  if (contact) contact.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  addAIMessage('bot', '✅ Formulaire prérempli ! Vérifiez les infos et validez votre RDV. À très vite chez PneuPro !');
+}
+
+function showTyping() {
+  const msgs = document.getElementById('ai-chat-messages');
+  const div = document.createElement('div');
+  div.className = 'ai-msg bot'; div.id = 'ai-typing-indicator';
+  div.innerHTML = `<div class="ai-msg-avatar">🤖</div><div class="ai-msg-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function hideTyping() {
+  const el = document.getElementById('ai-typing-indicator');
+  if (el) el.remove();
+}
+
+function setAIStatus(text, color = '#4da6ff') {
+  const el = document.getElementById('ai-status-text');
+  if (el) { el.textContent = text; el.style.color = color; }
+}
+
+async function sendAIMessage() {
+  const input = document.getElementById('ai-chat-input');
+  const text  = input.value.trim();
+  if (!text || aiIsTyping) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('ai-chat-send').disabled = true;
+  addAIMessage('user', text);
+
+  // Détection de plaque avant d'envoyer à Claude
+  const plaqueMatch = text.match(/\b([A-Z]{2}[-\s]?\d{3}[-\s]?[A-Z]{2}|\d{4}[-\s]?[A-Z]{2}[-\s]?\d{2})\b/i);
+  if (plaqueMatch) {
+    const plaque = plaqueMatch[0].trim().toUpperCase().replace(/\s+/g,'-');
+    aiIsTyping = true;
+    setAIStatus('Identification du véhicule…', '#f5c842');
+    showTyping();
+    try {
+      const vehicle = await sivLookup(plaque);
+      hideTyping();
+      if (vehicle) {
+        const marque  = vehicle.marque || vehicle.AWN_marque || '';
+        const modele  = vehicle.modele || vehicle.AWN_modele || '';
+        const version = vehicle.version || vehicle.AWN_version || '';
+        const vin     = vehicle.vin || vehicle.VIN || vehicle.AWN_VIN || '';
+        const dateStr = vehicle.date1erCir_fr || vehicle.AWN_date_mise_en_circulation || '';
+        const annee   = dateStr ? (dateStr.split('-')[0] || dateStr.split('/')[2] || '') : '';
+        const vehiculeLabel = [marque, modele, version].filter(Boolean).join(' ') + (annee ? ` (${annee})` : '');
+
+        const found = findTailleFromDB(marque, modele, annee);
+        const taille = found ? found.taille : null;
+
+        const vinLine = vin ? `\n🔑 VIN : **${vin}**` : '';
+        const tailleLine = taille ? `\n🔵 Taille d'origine : _${taille}_` : '';
+
+        addAIMessage('bot',
+          `✅ Véhicule identifié pour la plaque **${plaque}** :\n\n🚗 **${vehiculeLabel}**${vinLine}${tailleLine}\n\nQue souhaitez-vous faire ?`,
+          ['📅 Prendre RDV', '💰 Prix montage', '🔧 Réparer une crevaison']
+        );
+      } else {
+        addAIMessage('bot', `Je n'ai pas trouvé de véhicule pour la plaque **${plaque}**. Vérifiez le format (ex: AB-123-CD) ou appelez-nous au **02 40 50 70 24**.`);
+      }
+    } catch(e) {
+      hideTyping();
+      addAIMessage('bot', `Désolé, la recherche de plaque a échoué. Appelez-nous au **02 40 50 70 24**.`);
+    }
+    aiIsTyping = false;
+    setAIStatus('En ligne · Répond en quelques secondes');
+    document.getElementById('ai-chat-send').disabled = false;
+    return;
+  }
+
+  // Appel Claude via Worker
+  aiIsTyping = true;
+  setAIStatus('Alex est en train d\'écrire…', '#4ade80');
+  showTyping();
+
+  aiConversation.push({ role: 'user', content: text });
+  // Limiter l'historique à 12 messages pour contrôler les tokens
+  const history = aiConversation.slice(-12);
+
+  try {
+    const res = await fetch(ANTHROPIC_WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        system: AI_SYSTEM_PROMPT,
+        messages: history
+      })
+    });
+    const data = await res.json();
+    const reply = (data.content || []).map(c => c.text || '').join('').trim();
+    hideTyping();
+
+    // Nettoyer les tags internes avant affichage
+    const displayReply = reply.replace(/\[RDV:[^\]]+\]/g, '').trim();
+    aiConversation.push({ role: 'assistant', content: reply });
+
+    // Suggestions contextuelles
+    let suggs = [];
+    if (reply.toLowerCase().includes('crevaison')) suggs = ['📅 Prendre RDV', '📞 Appeler'];
+    else if (reply.toLowerCase().includes('rdv') || reply.toLowerCase().includes('rendez-vous')) suggs = ['📅 Ouvrir le formulaire'];
+    else if (reply.toLowerCase().includes('tarif') || reply.toLowerCase().includes('prix')) suggs = ['📅 Réserver', '📞 Demander un devis'];
+
+    addAIMessage('bot', displayReply, suggs);
+
+  } catch(e) {
+    hideTyping();
+    addAIMessage('bot', `Une erreur s'est produite. Contactez-nous directement au **02 40 50 70 24**.`);
+  }
+
+  aiIsTyping = false;
+  setAIStatus('En ligne · Répond en quelques secondes');
+  document.getElementById('ai-chat-send').disabled = false;
+}
+
+function autoResizeInput(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+// Notification après 8 secondes si le chat n'est pas ouvert
+setTimeout(() => {
+  if (!aiChatOpen) {
+    // Desktop
+    document.getElementById('ai-notif-dot').style.display = 'block';
+    const btn = document.getElementById('ai-chat-btn');
+    btn.animate([
+      {boxShadow:'0 0 0 0 rgba(77,166,255,0.6)'},
+      {boxShadow:'0 0 0 16px rgba(77,166,255,0)'}
+    ], {duration:1000, iterations:3});
+    // Mobile sticky bar
+    const msbDot = document.getElementById('msb-ai-dot');
+    if (msbDot) msbDot.style.display = 'block';
+  }
+}, 8000);
 </script>
 </body>
 </html>
