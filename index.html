@@ -2434,21 +2434,39 @@ async function searchPlaque() {
   document.getElementById('plaqueResult').classList.remove('show');
 
   try {
-    // Essai 1 : Nouvel endpoint direct 2026
+    // ── Essai 1 : auto-ways.net — GET /v1/fr/ (token démo SDK officiel) ──
     let json = null;
     try {
-      const res1 = await fetch(`https://api.apiplaqueimmatriculation.com/plaque?immatriculation=${encodeURIComponent(plaque)}&token=TokenDemo2026B&pays=FR`, {
-        method: 'POST',
-        headers: { 'Accept': 'application/json' }
-      });
-      if (res1.ok) {
-        const j1 = await res1.json();
-        console.log('API 2026 response:', JSON.stringify(j1));
-        if (j1.marque || (j1.data && j1.data.marque)) json = j1;
+      const res0 = await fetch(
+        `https://app.auto-ways.net/api/v1/fr/?token=${AUTOWAYS_TOKEN}&plaque=${encodeURIComponent(plaque)}&output_lang=fr`,
+        { method: 'GET', headers: { 'Accept': 'application/json' } }
+      );
+      if (res0.ok) {
+        const j0 = await res0.json();
+        console.log('auto-ways.net response:', JSON.stringify(j0));
+        if (j0.error === false && j0.data) {
+          const normalized = normalizeAWN(j0.data);
+          if (normalized) json = { data: normalized };
+        }
       }
-    } catch(e1) { console.warn('API 2026 échouée:', e1.message); }
+    } catch(e0) { console.warn('auto-ways.net échoué:', e0.message); }
 
-    // Essai 2 : Worker Cloudflare → proxy SIV sans CORS
+    // ── Essai 2 : RapidAPI (fallback) ──
+    if (!json) {
+      try {
+        const res1 = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/get-vehicule-info?token=TokenDemoRapidapi&host_name=https%3A%2F%2Fapiplaqueimmatriculation.com&immatriculation=${encodeURIComponent(plaque)}`, {
+          method: 'GET',
+          headers: { 'x-rapidapi-host': 'api-plaque-immatriculation-siv.p.rapidapi.com', 'x-rapidapi-key': RAPIDAPI_KEY }
+        });
+        if (res1.ok) {
+          const j1 = await res1.json();
+          console.log('RapidAPI response:', JSON.stringify(j1));
+          if (j1.marque || (j1.data && j1.data.marque)) json = j1;
+        }
+      } catch(e1) { console.warn('RapidAPI échouée:', e1.message); }
+    }
+
+    // ── Essai 3 : Worker Cloudflare (dernier recours) ──
     if (!json) {
       try {
         const res2 = await fetch(ANTHROPIC_WORKER_URL, {
@@ -2509,26 +2527,14 @@ async function searchPlaque() {
     }
   } catch(e) {
     console.warn('SIV API erreur:', e.message);
-    document.getElementById('plaqueLoading').style.display = 'none';
     document.getElementById('plaqueResult').innerHTML = `
-      <div style="margin-bottom:0.7rem">
-        <div style="color:var(--gold);font-family:var(--font-head);font-size:0.75rem;font-weight:700;margin-bottom:0.4rem">🤖 Plaque non trouvée — recherche IA</div>
-        <div style="color:var(--text-mid);font-size:0.78rem;line-height:1.6">Entrez votre véhicule (marque + modèle + année) et Claude AI trouve la taille :</div>
-      </div>
-      <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem">
-        <input id="aiFallbackInputFinder" placeholder="ex: Peugeot 308 2019, Golf 7 2016…" 
-          style="flex:1;border:1px solid var(--border);background:var(--black2);padding:0.75rem 0.9rem;font-family:var(--font-body);font-size:0.9rem;color:var(--offwhite);outline:none;min-height:48px"
-          onkeydown="if(event.key==='Enter') searchTailleFinderByText(document.getElementById('aiFallbackInputFinder').value)">
-        <button onclick="searchTailleFinderByText(document.getElementById('aiFallbackInputFinder').value)"
-          style="background:var(--gold);color:var(--black);border:none;padding:0.75rem 1.2rem;font-family:var(--font-head);font-weight:800;font-size:0.85rem;cursor:pointer;min-height:48px">→</button>
-      </div>
-      <div id="aiFallbackFinderLoading" style="display:none;color:var(--text-mid);font-size:0.75rem;text-align:center;padding:0.5rem">
-        <div style="display:inline-block;width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin-right:0.5rem"></div>Claude AI cherche…
-      </div>
-      <div id="aiFallbackFinderResult"></div>
-    `;
+      <div style="color:var(--gold);font-family:var(--font-head);font-size:0.8rem;margin-bottom:0.8rem">⚠️ Plaque non trouvée automatiquement</div>
+      <p style="color:var(--text-mid);font-size:0.78rem;line-height:1.7">Utilisez la recherche <strong>Par Véhicule</strong> ci-dessus, ou appelez-nous.</p>
+      <div class="result-cta" style="margin-top:1rem">
+        <a href="#tire-finder" onclick="openFinderSection(event);setTimeout(()=>switchTab('voiture'),600)" class="btn-gold" style="font-size:0.72rem;padding:0.7rem 1.5rem">🚗 Chercher par véhicule</a>
+        <a href="tel:+33240507024" class="btn-outline-gold" style="font-size:0.72rem;padding:0.7rem 1.5rem">📞 02 40 50 70 24</a>
+      </div>`;
     document.getElementById('plaqueResult').classList.add('show');
-    setTimeout(() => { const inp = document.getElementById('aiFallbackInputFinder'); if(inp) inp.focus(); }, 100);
   }
   document.getElementById('plaqueLoading').style.display = 'none';
 }
@@ -2725,54 +2731,77 @@ function rdvUpdateAnnees() {
   if (marque && modele && catalogueVehicules[marque]?.[modele]) catalogueVehicules[marque][modele].forEach(a => anneeEl.innerHTML += `<option>${a}</option>`);
 }
 
-// ── Fonction SIV partagée (API directe 2026 + Worker proxy + Claude AI) ──
+// ── Token démo auto-ways.net (SDK officiel : autowaysnet/api-plaque-immatriculation-Client-SDK) ──
+// Token démo public fourni dans le swagger.yaml officiel du SDK
+// Pour la production : demander un token sur https://auto-ways.net/demo
+const AUTOWAYS_TOKEN = '4a486e221ea6d4a888671242b5fe0fed';
+
+// Normalise une réponse auto-ways.net (champs AWN_*) vers le format attendu par le reste du code
+function normalizeAWN(d) {
+  if (!d || !d.AWN_marque) return null;
+  // La date est au format DD/MM/YYYY → on extrait l'année (index 2)
+  const dateStr = d.AWN_date_mise_en_circulation || '';
+  const parts   = dateStr.split('/');
+  const annee   = parts.length === 3 ? parts[2] : '';
+  return {
+    marque          : d.AWN_marque        || '',
+    modele          : d.AWN_modele        || '',
+    modele_en       : d.AWN_modele_etude  || '',
+    version         : d.AWN_version       || '',
+    date1erCir_fr   : dateStr,
+    debut_modele    : annee ? annee + '-01' : '',
+    // Pas de taille pneu directe dans cette API → findTailleFromDB prendra le relai
+    energie         : d.AWN_energie       || '',
+    puissance_ch    : d.AWN_puissance_chevaux || '',
+    couleur         : d.AWN_couleur       || ''
+  };
+}
+
+// ── Fonction SIV partagée (auto-ways.net + RapidAPI + Worker fallback) ──
 async function sivLookup(plaque) {
-  // Essai 1 : Nouvel endpoint direct 2026
+  // ── Essai 1 : auto-ways.net — API officielle FR (SDK : autowaysnet/api-plaque-immatriculation-Client-SDK) ──
+  // Endpoint : GET https://app.auto-ways.net/api/v1/fr/?token=TOKEN&plaque=PLAQUE&output_lang=fr
   try {
-    const r0 = await fetch(`https://api.apiplaqueimmatriculation.com/plaque?immatriculation=${encodeURIComponent(plaque)}&token=TokenDemo2026B&pays=FR`, {
-      method: 'POST',
-      headers: { 'Accept': 'application/json' }
-    });
+    const r0 = await fetch(
+      `https://app.auto-ways.net/api/v1/fr/?token=${AUTOWAYS_TOKEN}&plaque=${encodeURIComponent(plaque)}&output_lang=fr`,
+      { method: 'GET', headers: { 'Accept': 'application/json' } }
+    );
     if (r0.ok) {
       const j = await r0.json();
-      if (j.data && j.data.marque) return j.data;
-      if (j.marque) return j;
+      console.log('auto-ways.net response:', JSON.stringify(j));
+      if (j.error === false && j.data) {
+        const normalized = normalizeAWN(j.data);
+        if (normalized) return normalized;
+      }
     }
-  } catch(e) { console.warn('API directe 2026:', e.message); }
+  } catch(e) { console.warn('auto-ways.net:', e.message); }
 
-  // Essai 2 : Worker → proxy SIV (contourne CORS)
+  // ── Essai 2 : RapidAPI (fallback) ──
+  try {
+    const r1 = await fetch(`https://api-plaque-immatriculation-siv.p.rapidapi.com/get-vehicule-info?token=TokenDemoRapidapi&host_name=https%3A%2F%2Fapiplaqueimmatriculation.com&immatriculation=${encodeURIComponent(plaque)}`, {
+      method: 'GET',
+      headers: { 'x-rapidapi-host': 'api-plaque-immatriculation-siv.p.rapidapi.com', 'x-rapidapi-key': RAPIDAPI_KEY }
+    });
+    if (r1.ok) {
+      const j = await r1.json();
+      if (j.marque || (j.data && j.data.marque)) return j.data || j;
+    }
+  } catch(e) { console.warn('RapidAPI:', e.message); }
+
+  // ── Essai 3 : Worker Cloudflare → proxy SIV (dernier recours) ──
   try {
     const r2 = await fetch(ANTHROPIC_WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ siv_proxy: true, plaque, token: 'TokenDemo2026B' })
+      body: JSON.stringify({ siv_proxy: true, plaque })
     });
     if (r2.ok) {
       const j = await r2.json();
       if (j.data && j.data.marque) return j.data;
-      if (j.marque) return j;
     }
   } catch(e) { console.warn('Worker SIV:', e.message); }
 
-  // Essai 3 : Claude AI — estimation basée sur catalogues connus
-  try {
-    const r3 = await fetch(ANTHROPIC_WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514', max_tokens: 150,
-        messages: [{ role: 'user', content: `Plaque française "${plaque}". Peux-tu estimer le type de véhicule et la taille de pneu la plus probable ? Réponds UNIQUEMENT en JSON valide, sans aucun texte: {"marque":"","modele":"","pneu":"205/55 R16","note":"estimation"}` }]
-      })
-    });
-    if (r3.ok) {
-      const d = await r3.json();
-      const txt = (d.content||[]).map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
-      const parsed = JSON.parse(txt);
-      if (parsed.pneu) return { marque: parsed.marque||'', modele: parsed.modele||'', res: parsed.pneu, note: parsed.note||'estimation IA' };
-    }
-  } catch(e) { console.warn('Claude AI SIV fallback:', e.message); }
-
-  return null; // Toutes les tentatives ont échoué
+  return null; // Les trois ont échoué
 }
 
 async function rdvSearchPlaque() {
@@ -2840,8 +2869,10 @@ async function rdvSearchPlaque() {
       }
     }
   } catch(e) {
-    console.warn('rdvSearchPlaque:', e.message);
-    showAIFallbackInline('');
+    console.error('rdvSearchPlaque error:', e);
+    // Récupérer le véhicule déjà affiché si possible
+    const vLabel = (typeof vehiculeLabel !== 'undefined' && vehiculeLabel) ? vehiculeLabel : null;
+    showMiniResult('205/55 R16', 'Taille à confirmer — appelez-nous', vLabel);
   }
 }
 
@@ -3318,8 +3349,7 @@ async function rdvSearchPlaque2() {
       showMiniResult2(found ? found.taille : '205/55 R16', found ? "Taille estimée" : 'Taille courante — à confirmer', vehiculeLabel);
     }
   } catch(e) {
-    console.warn('rdvSearchPlaque2:', e.message);
-    showAIFallbackInline('2');
+    showMiniResult2('Non trouvé', 'Appelez-nous : 02 40 50 70 24');
   }
 }
 
@@ -3369,125 +3399,6 @@ function rdvHandlePhoto2(e) {
   };
   reader.readAsDataURL(file);
 }
-// ══════════════════════════════════════════════
-// 🤖 FALLBACK IA — Recherche taille par texte libre
-// Appelé quand le lookup de plaque échoue (quota TokenDemo épuisé, CORS, etc.)
-// Zéro abonnement : utilise Claude AI via le Worker existant.
-// ══════════════════════════════════════════════
-
-// Affiche un champ texte libre dans le mini-finder (hero card ou footer card)
-function showAIFallbackInline(suffix) {
-  const s = suffix || '';
-  const resultId  = 'miniFResult'  + s;
-  const loadingId = 'miniFLoading' + s;
-  const inputId   = 'aiFallbackInput' + s;
-
-  const loadingEl = document.getElementById(loadingId);
-  if (loadingEl) loadingEl.style.display = 'none';
-
-  const el = document.getElementById(resultId);
-  el.innerHTML = `
-    <div style="font-size:0.68rem;color:var(--text-mid);margin-bottom:0.7rem;line-height:1.65">
-      🤖 <strong style="color:var(--offwhite)">Plaque non trouvée.</strong><br>
-      Tapez votre véhicule — Claude AI trouve la taille instantanément :
-    </div>
-    <div style="display:flex;gap:0.4rem;margin-bottom:0.3rem">
-      <input id="${inputId}"
-        placeholder="ex: Renault Clio 2019, Golf 7…"
-        style="flex:1;border:1px solid var(--border);background:var(--black2);padding:0.6rem 0.7rem;
-               font-family:var(--font-body);font-size:0.85rem;color:var(--offwhite);outline:none;min-height:42px"
-        onkeydown="if(event.key==='Enter'){document.getElementById('${inputId}').blur();searchTailleByText(document.getElementById('${inputId}').value,'${s}')}">
-      <button
-        onclick="searchTailleByText(document.getElementById('${inputId}').value,'${s}')"
-        style="background:var(--gold);color:var(--black);border:none;padding:0.6rem 0.9rem;
-               font-family:var(--font-head);font-weight:800;font-size:0.82rem;cursor:pointer;min-height:42px">→</button>
-    </div>
-    <div id="aiFallbackLoading${s}" style="display:none;font-size:0.7rem;color:var(--text-mid);text-align:center;padding:0.4rem">
-      <div style="display:inline-block;width:11px;height:11px;border:2px solid var(--border);border-top-color:var(--gold);
-                  border-radius:50%;animation:spin 0.8s linear infinite;margin-right:0.4rem;vertical-align:middle"></div>Claude AI cherche…
-    </div>
-  `;
-  el.style.display = 'block';
-  setTimeout(() => { const inp = document.getElementById(inputId); if (inp) inp.focus(); }, 80);
-}
-
-// Appelle Claude AI avec un texte libre (marque + modèle + année au format libre)
-// Fonctionne pour les deux mini-finders (suffix '' ou '2') et le finder principal
-async function searchTailleByText(text, suffix) {
-  if (!text || !text.trim()) return;
-  const s = suffix || '';
-  const fallbackLoadingId = 'aiFallbackLoading' + s;
-  const resultFn = s === '2' ? showMiniResult2 : showMiniResult;
-
-  const fallbackLoadingEl = document.getElementById(fallbackLoadingId);
-  if (fallbackLoadingEl) fallbackLoadingEl.style.display = 'block';
-
-  try {
-    const res = await fetch(ANTHROPIC_WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 200,
-        messages: [{
-          role: 'user',
-          content: `Tu es un expert en pneumatiques. Pour le véhicule : "${text.trim()}", donne la taille de pneu d'origine la plus courante.
-Réponds UNIQUEMENT en JSON valide, sans texte ni balises, exactement comme ceci :
-{"taille":"205/55 R16","marque":"RENAULT","modele":"CLIO","annee":"2019","confidence":"haute"}
-confidence = "haute" si tu es sûr, "moyenne" si estimation probable.`
-        }]
-      })
-    });
-    const d = await res.json();
-    const txt = (d.content || []).map(c => c.text || '').join('').replace(/```json|```/g, '').trim();
-    const r = JSON.parse(txt);
-    const vehiculeLabel = [r.marque, r.modele, r.annee ? `(${r.annee})` : ''].filter(Boolean).join(' ') || text.trim();
-    const confLabel = r.confidence === 'haute' ? "Taille d'origine · Claude AI ✓" : "Taille estimée · À confirmer";
-    resultFn(r.taille || '205/55 R16', confLabel, vehiculeLabel);
-  } catch(e) {
-    console.warn('searchTailleByText:', e.message);
-    resultFn('205/55 R16', 'Estimation par défaut — appelez-nous', text.trim());
-  }
-  if (fallbackLoadingEl) fallbackLoadingEl.style.display = 'none';
-}
-
-// Version pour le grand finder (section #tire-finder)
-async function searchTailleFinderByText(text) {
-  if (!text || !text.trim()) return;
-  const loadingEl = document.getElementById('aiFallbackFinderLoading');
-  const resultEl  = document.getElementById('aiFallbackFinderResult');
-  if (loadingEl) loadingEl.style.display = 'block';
-  if (resultEl)  resultEl.innerHTML = '';
-
-  try {
-    const res = await fetch(ANTHROPIC_WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 200,
-        messages: [{
-          role: 'user',
-          content: `Tu es un expert en pneumatiques. Pour le véhicule : "${text.trim()}", donne la taille de pneu d'origine la plus courante.
-Réponds UNIQUEMENT en JSON valide, sans texte ni balises :
-{"taille":"205/55 R16","marque":"RENAULT","modele":"CLIO","annee":"2019","confidence":"haute","pression":"2.3 / 2.1 bar"}`
-        }]
-      })
-    });
-    const d = await res.json();
-    const txt = (d.content || []).map(c => c.text || '').join('').replace(/```json|```/g, '').trim();
-    const r = JSON.parse(txt);
-    const vehiculeLabel = [r.marque, r.modele, r.annee ? `(${r.annee})` : ''].filter(Boolean).join(' ') || text.trim();
-    const confLabel = r.confidence === 'haute' ? "Taille d'origine · Claude AI ✓" : "Taille estimée · À confirmer";
-    const result = { taille: r.taille || '205/55 R16', label: confLabel, vehicule: vehiculeLabel, pression: r.pression || '' };
-    plaqueCache[text.trim()] = result;
-    showResult('plaqueResult', result);
-  } catch(e) {
-    if (resultEl) resultEl.innerHTML = `<div style="color:var(--text-mid);font-size:0.78rem">Impossible d'estimer — appelez-nous au <a href="tel:+33240507024" style="color:var(--gold)">02 40 50 70 24</a></div>`;
-  }
-  if (loadingEl) loadingEl.style.display = 'none';
-}
-
 function toggleMenu() {
   const menu = document.getElementById('mobileMenu');
   const btn = document.getElementById('hamburgerBtn');
