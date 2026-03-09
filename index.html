@@ -1042,7 +1042,15 @@ footer { background: #002F78; color: rgba(255,255,255,0.90); padding: 4rem 5vw 2
   /* SECTIONS + HIDE NON-ESSENTIALS */
 
   /* HIDE HEAVY SECTIONS ON MOBILE */
-  #tire-finder { display: none; }
+  /* tire-finder réactivé sur mobile */
+  #tire-finder { display: block !important; }
+  #tire-finder .finder-tabs { flex-direction: row !important; overflow-x: auto; }
+  #tire-finder .finder-tab { font-size: 0.65rem !important; padding: 0.7rem 0.4rem !important; flex: 1; white-space: nowrap; }
+  #tire-finder .finder-input-group { flex-direction: column; }
+  #tire-finder .finder-input, #tire-finder .finder-select { min-width: auto !important; width: 100%; }
+  #tire-finder .finder-btn { width: 100%; margin-top: 0.3rem; }
+  #tire-finder .result-cta { flex-direction: column; }
+  #tire-finder .photo-drop { padding: 1.2rem 1rem; }
   #conseils { display: none; }
 
 
