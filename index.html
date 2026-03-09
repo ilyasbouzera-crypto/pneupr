@@ -1474,8 +1474,20 @@ footer { background: #002F78; color: rgba(255,255,255,0.90); padding: 4rem 5vw 2
       <div class="rdv-group" id="taille-group" style="display:none">
         <label for="taillePneu">Taille de pneu détectée</label>
         <input type="text" id="taillePneu" readonly style="background:rgba(77,166,255,0.06);border-color:var(--gold);color:var(--gold);font-family:var(--font-head);font-weight:700;font-size:1rem;letter-spacing:0.1em;cursor:default" aria-readonly="true">
+        <div id="indices-group" style="display:flex;gap:0.6rem;margin-top:0.4rem">
+          <div style="flex:1">
+            <label style="font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.25rem;display:block">⚖️ Indice de charge</label>
+            <input type="text" id="indiceCharge" readonly style="width:100%;background:rgba(77,166,255,0.06);border:1px solid var(--border-dim);color:var(--offwhite);font-family:var(--font-head);font-weight:700;font-size:0.95rem;letter-spacing:0.1em;padding:0.5rem 0.7rem;cursor:default" aria-readonly="true">
+          </div>
+          <div style="flex:1">
+            <label style="font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.25rem;display:block">🏎️ Indice de vitesse</label>
+            <input type="text" id="indiceVitesse" readonly style="width:100%;background:rgba(77,166,255,0.06);border:1px solid var(--border-dim);color:var(--offwhite);font-family:var(--font-head);font-weight:700;font-size:0.95rem;letter-spacing:0.1em;padding:0.5rem 0.7rem;cursor:default" aria-readonly="true">
+          </div>
+        </div>
         <input type="hidden" id="vehiculeHidden" value="">
         <input type="hidden" id="sourceTailleHidden" value="">
+        <input type="hidden" id="indiceChargeHidden" value="">
+        <input type="hidden" id="indiceVitesseHidden" value="">
       </div>
       <div class="rdv-group photo-jointe-group" id="photo-jointe-group">
         <label>📷 Photo jointe</label>
@@ -1615,8 +1627,20 @@ footer { background: #002F78; color: rgba(255,255,255,0.90); padding: 4rem 5vw 2
       <div class="rdv-group" id="taille-group2" style="display:none">
         <label for="taillePneu2">Taille de pneu détectée</label>
         <input type="text" id="taillePneu2" readonly style="background:rgba(77,166,255,0.06);border-color:var(--gold);color:var(--gold);font-family:var(--font-head);font-weight:700;font-size:1rem;letter-spacing:0.1em;cursor:default">
+        <div id="indices-group2" style="display:flex;gap:0.6rem;margin-top:0.4rem">
+          <div style="flex:1">
+            <label style="font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.25rem;display:block">⚖️ Indice de charge</label>
+            <input type="text" id="indiceCharge2" readonly style="width:100%;background:rgba(77,166,255,0.06);border:1px solid var(--border-dim);color:var(--offwhite);font-family:var(--font-head);font-weight:700;font-size:0.95rem;letter-spacing:0.1em;padding:0.5rem 0.7rem;cursor:default">
+          </div>
+          <div style="flex:1">
+            <label style="font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.25rem;display:block">🏎️ Indice de vitesse</label>
+            <input type="text" id="indiceVitesse2" readonly style="width:100%;background:rgba(77,166,255,0.06);border:1px solid var(--border-dim);color:var(--offwhite);font-family:var(--font-head);font-weight:700;font-size:0.95rem;letter-spacing:0.1em;padding:0.5rem 0.7rem;cursor:default">
+          </div>
+        </div>
         <input type="hidden" id="vehiculeHidden2" value="">
         <input type="hidden" id="sourceTailleHidden2" value="">
+        <input type="hidden" id="indiceChargeHidden2" value="">
+        <input type="hidden" id="indiceVitesseHidden2" value="">
       </div>
       <div class="rdv-group photo-jointe-group" id="photo-jointe-group2">
         <label>📷 Photo jointe</label>
@@ -2172,11 +2196,13 @@ function showResult(containerId, data, btnLabel) {
       ${data.taille.match(/\d+\/\d+/) ? `
       <div class="result-info-item"><strong>Largeur</strong><span>${data.taille.split('/')[0]} mm</span></div>
       <div class="result-info-item"><strong>Rapport h/l</strong><span>${data.taille.split('/')[1].split(' ')[0]}%</span></div>
-      <div class="result-info-item"><strong>Diamètre</strong><span>${data.taille.split('R')[1] || '—'}"</span></div>` : ''}
+      <div class="result-info-item"><strong>Diamètre</strong><span>${data.taille.split('R')[1] || '—'}"</span></div>
+      <div class="result-info-item"><strong>⚖️ Indice charge</strong><span style="color:var(--gold);font-weight:700">${data.charge || getIndices(data.taille).charge}</span></div>
+      <div class="result-info-item"><strong>🏎️ Indice vitesse</strong><span style="color:var(--gold);font-weight:700">${data.vitesse || getIndices(data.taille).vitesse}</span></div>` : ''}
       ${extras.join('')}
     </div>
     ${data.taille && data.taille !== '—' ? `
-    <button onclick="handleResultBtn(this)" data-taille="${data.taille}" data-vehicule="${(data.vehicule||'').replace(/'/g,"'")}" data-isphoto="${btnLabel && btnLabel.includes('photo') ? 'oui' : ''}" style="width:100%;margin-bottom:0.8rem;background:var(--gold);color:var(--black);border:none;padding:0.75rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem">
+    <button onclick="handleResultBtn(this)" data-taille="${data.taille}" data-vehicule="${(data.vehicule||'').replace(/'/g,"'")}" data-charge="${data.charge || getIndices(data.taille).charge}" data-vitesse="${data.vitesse || getIndices(data.taille).vitesse}" data-isphoto="${btnLabel && btnLabel.includes('photo') ? 'oui' : ''}" style="width:100%;margin-bottom:0.8rem;background:var(--gold);color:var(--black);border:none;padding:0.75rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem">
       ${btnLabel || '✓ Utiliser cette taille dans le formulaire'}
     </button>` : ''}
     <div class="result-cta">
@@ -2241,19 +2267,27 @@ function utilisierTaille(taille, vehicule) {
 function handleResultBtn(btn) {
   const taille = btn.dataset.taille;
   const vehicule = btn.dataset.vehicule || '';
+  const charge = btn.dataset.charge || getIndices(taille).charge;
+  const vitesse = btn.dataset.vitesse || getIndices(taille).vitesse;
   const isPhoto = btn.dataset.isphoto === 'oui';
   if (isPhoto) {
-    joindrPhotoAuFormulaire(taille, vehicule, btn);
+    joindrPhotoAuFormulaire(taille, vehicule, btn, charge, vitesse);
   } else {
-    utilisierTailleBtn(taille, vehicule, btn);
+    utilisierTailleBtn(taille, vehicule, btn, charge, vitesse);
   }
 }
 
 // Injecter taille depuis bouton (version sans event.target)
-function utilisierTailleBtn(taille, vehicule, btn) {
+function utilisierTailleBtn(taille, vehicule, btn, charge, vitesse) {
+  const idx = (charge && vitesse) ? { charge, vitesse } : getIndices(taille);
   const input1 = document.getElementById('taillePneu');
   const group1 = document.getElementById('taille-group');
   if (input1) { input1.value = taille; if (group1) group1.style.display = 'flex'; }
+  // Indices desktop
+  const ic1 = document.getElementById('indiceCharge'); if (ic1) ic1.value = idx.charge;
+  const iv1 = document.getElementById('indiceVitesse'); if (iv1) iv1.value = idx.vitesse;
+  const ich1 = document.getElementById('indiceChargeHidden'); if (ich1) ich1.value = idx.charge;
+  const ivh1 = document.getElementById('indiceVitesseHidden'); if (ivh1) ivh1.value = idx.vitesse;
   if (vehicule) {
     const nv1 = document.getElementById('nomVehicule'); if (nv1) nv1.value = vehicule;
     const vh1 = document.getElementById('vehiculeHidden'); if (vh1) vh1.value = vehicule;
@@ -2263,6 +2297,11 @@ function utilisierTailleBtn(taille, vehicule, btn) {
   const input2 = document.getElementById('taillePneu2');
   const group2 = document.getElementById('taille-group2');
   if (input2) { input2.value = taille; if (group2) group2.style.display = 'flex'; }
+  // Indices mobile
+  const ic2 = document.getElementById('indiceCharge2'); if (ic2) ic2.value = idx.charge;
+  const iv2 = document.getElementById('indiceVitesse2'); if (iv2) iv2.value = idx.vitesse;
+  const ich2 = document.getElementById('indiceChargeHidden2'); if (ich2) ich2.value = idx.charge;
+  const ivh2 = document.getElementById('indiceVitesseHidden2'); if (ivh2) ivh2.value = idx.vitesse;
   if (vehicule) {
     const nv2 = document.getElementById('nomVehicule2'); if (nv2) nv2.value = vehicule;
     const vh2 = document.getElementById('vehiculeHidden2'); if (vh2) vh2.value = vehicule;
@@ -2280,7 +2319,7 @@ function utilisierTailleBtn(taille, vehicule, btn) {
 }
 
 // Joindre la photo de l'onglet "Par Photo" au formulaire RDV
-function joindrPhotoAuFormulaire(taille, vehicule, btn) {
+function joindrPhotoAuFormulaire(taille, vehicule, btn, charge, vitesse) {
   // Récupérer la photo analysée (base64 dans l'aperçu)
   const photoImg = document.getElementById('photoImg');
   if (photoImg && photoImg.src && photoImg.src.startsWith('data:')) {
@@ -2290,7 +2329,7 @@ function joindrPhotoAuFormulaire(taille, vehicule, btn) {
 
   // Remplir la taille si détectée
   if (taille && taille !== '—' && taille !== 'Photo illisible') {
-    utilisierTailleBtn(taille, vehicule, null);
+    utilisierTailleBtn(taille, vehicule, null, charge, vitesse);
   }
 
   // Afficher la photo dans les deux formulaires
@@ -2479,6 +2518,83 @@ const taillesDB = {
   'NISSAN|LEAF': { default: '205/55 R16' },
 };
 
+// ═══ INDICES STANDARD DE CHARGE ET VITESSE PAR TAILLE ═══
+const indicesStandard = {
+  '155/65 R14': { charge: '75', vitesse: 'T' },
+  '165/65 R14': { charge: '79', vitesse: 'T' },
+  '175/65 R14': { charge: '82', vitesse: 'T' },
+  '175/70 R14': { charge: '84', vitesse: 'T' },
+  '185/60 R14': { charge: '82', vitesse: 'H' },
+  '175/60 R15': { charge: '81', vitesse: 'H' },
+  '185/55 R15': { charge: '82', vitesse: 'H' },
+  '185/65 R15': { charge: '88', vitesse: 'H' },
+  '195/55 R15': { charge: '85', vitesse: 'H' },
+  '195/60 R15': { charge: '88', vitesse: 'H' },
+  '195/65 R15': { charge: '91', vitesse: 'H' },
+  '205/60 R15': { charge: '91', vitesse: 'H' },
+  '205/65 R15': { charge: '94', vitesse: 'H' },
+  '195/45 R16': { charge: '84', vitesse: 'V' },
+  '195/50 R16': { charge: '84', vitesse: 'V' },
+  '195/55 R16': { charge: '87', vitesse: 'H' },
+  '205/45 R16': { charge: '87', vitesse: 'W' },
+  '205/55 R16': { charge: '91', vitesse: 'V' },
+  '205/60 R16': { charge: '92', vitesse: 'H' },
+  '215/55 R16': { charge: '93', vitesse: 'V' },
+  '215/60 R16': { charge: '95', vitesse: 'H' },
+  '215/65 R16': { charge: '98', vitesse: 'H' },
+  '225/55 R16': { charge: '95', vitesse: 'V' },
+  '205/40 R17': { charge: '84', vitesse: 'W' },
+  '205/45 R17': { charge: '88', vitesse: 'W' },
+  '205/50 R17': { charge: '93', vitesse: 'W' },
+  '205/55 R17': { charge: '95', vitesse: 'V' },
+  '215/45 R17': { charge: '91', vitesse: 'W' },
+  '215/50 R17': { charge: '95', vitesse: 'W' },
+  '215/55 R17': { charge: '94', vitesse: 'V' },
+  '215/60 R17': { charge: '96', vitesse: 'H' },
+  '225/45 R17': { charge: '94', vitesse: 'W' },
+  '225/50 R17': { charge: '98', vitesse: 'W' },
+  '225/55 R17': { charge: '101', vitesse: 'V' },
+  '235/45 R17': { charge: '97', vitesse: 'W' },
+  '235/55 R17': { charge: '99', vitesse: 'V' },
+  '245/45 R17': { charge: '99', vitesse: 'W' },
+  '205/40 R18': { charge: '86', vitesse: 'W' },
+  '215/45 R18': { charge: '93', vitesse: 'W' },
+  '215/50 R18': { charge: '92', vitesse: 'V' },
+  '215/55 R18': { charge: '99', vitesse: 'V' },
+  '225/40 R18': { charge: '92', vitesse: 'Y' },
+  '225/45 R18': { charge: '95', vitesse: 'W' },
+  '225/50 R18': { charge: '99', vitesse: 'W' },
+  '225/55 R18': { charge: '98', vitesse: 'V' },
+  '235/45 R18': { charge: '98', vitesse: 'W' },
+  '235/50 R18': { charge: '101', vitesse: 'W' },
+  '235/55 R18': { charge: '100', vitesse: 'V' },
+  '245/40 R18': { charge: '97', vitesse: 'W' },
+  '245/45 R18': { charge: '100', vitesse: 'W' },
+  '255/35 R18': { charge: '94', vitesse: 'W' },
+  '255/45 R18': { charge: '103', vitesse: 'W' },
+  '255/55 R18': { charge: '109', vitesse: 'Y' },
+  '225/45 R19': { charge: '96', vitesse: 'W' },
+  '235/50 R19': { charge: '99', vitesse: 'W' },
+  '235/55 R19': { charge: '101', vitesse: 'W' },
+  '245/40 R19': { charge: '98', vitesse: 'W' },
+  '245/45 R19': { charge: '102', vitesse: 'W' },
+  '245/50 R19': { charge: '105', vitesse: 'W' },
+  '255/50 R19': { charge: '103', vitesse: 'Y' },
+  '255/55 R19': { charge: '111', vitesse: 'W' },
+  '265/50 R19': { charge: '110', vitesse: 'V' },
+  '275/40 R19': { charge: '101', vitesse: 'W' },
+  '275/45 R19': { charge: '108', vitesse: 'W' },
+};
+
+// Retourne {charge, vitesse} selon la taille (ex: "205/55 R16")
+function getIndices(taille) {
+  if (!taille) return { charge: '—', vitesse: '—' };
+  // Nettoyer la taille : enlever les éventuels indices déjà présents ("205/55 R16 91V" → "205/55 R16")
+  const match = taille.match(/(\d{3}\/\d{2}\s?[A-Z]\s?\d{2})/);
+  const clean = match ? match[1].replace(/\s/g, ' ').trim() : taille.trim();
+  return indicesStandard[clean] || { charge: '—', vitesse: '—' };
+}
+
 function findTailleFromDB(marque, modele, annee) {
   const m  = (marque  || '').toUpperCase().trim();
   const mo = (modele  || '').toUpperCase().trim();
@@ -2639,7 +2755,7 @@ async function searchVoiture() {
     const res = await fetch(ANTHROPIC_WORKER_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400,
-        messages: [{ role: 'user', content: `Dimensions pneus d'origine pour ${marque} ${modele} ${annee}. JSON uniquement sans markdown: {"taille":"205/55 R16","alt":"215/50 R17","pression":"2.3 / 2.1 bar","label":"${marque} ${modele} ${annee} · Origine"}` }] })
+        messages: [{ role: 'user', content: `Dimensions pneus d'origine pour ${marque} ${modele} ${annee}. JSON uniquement sans markdown: {"taille":"205/55 R16","alt":"215/50 R17","pression":"2.3 / 2.1 bar","charge":"91","vitesse":"V","label":"${marque} ${modele} ${annee} · Origine"}` }] })
     });
     const d = await res.json();
     let txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
@@ -2666,7 +2782,7 @@ function handlePhoto(e) {
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500,
           messages: [{ role: 'user', content: [
             { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
-            { type: 'text', text: 'Lis les inscriptions sur ce pneu. Identifie la taille (ex: 205/55 R16 91V). JSON uniquement sans markdown: {"taille":"205/55 R16","alt":"","pression":"","label":"Lu sur votre pneu"}. Si illisible: {"taille":"Non lisible","alt":"","pression":"","label":"Rapprochez-vous ou appelez le 02 40 50 70 24"}' }
+            { type: 'text', text: 'Lis les inscriptions sur ce pneu. Identifie la taille (ex: 205/55 R16 91V). JSON uniquement sans markdown: {"taille":"205/55 R16","alt":"","pression":"","charge":"91","vitesse":"V","label":"Lu sur votre pneu"}. Si illisible: {"taille":"Non lisible","alt":"","pression":"","charge":"—","vitesse":"—","label":"Rapprochez-vous ou appelez le 02 40 50 70 24"}' }
           ]}] })
       });
       const d = await res.json();
@@ -2711,11 +2827,12 @@ function switchMiniTab(tab) {
   document.getElementById('mini-panel-' + tab).classList.add('active');
 }
 
-function showMiniResult(taille, label, vehicule) {
+function showMiniResult(taille, label, vehicule, charge, vitesse) {
   console.log('🔵 showMiniResult appelé → taille:', taille, '| vehicule:', vehicule);
   miniFTailleFound = taille;
   miniFVehicule = vehicule || '';
   miniFSource = label || '';
+  const idx = (charge && vitesse) ? { charge, vitesse } : getIndices(taille);
 
   // Appliquer IMMÉDIATEMENT dans le formulaire sans attendre le clic
   const vh = document.getElementById('vehiculeHidden');
@@ -2733,11 +2850,18 @@ function showMiniResult(taille, label, vehicule) {
   if (vv) vv.value = miniFVehicule;
   if (vg) vg.style.display = miniFVehicule ? 'flex' : 'none';
   if (svc && !svc.value) svc.value = 'Changement de pneus';
+  // Remplir indices desktop
+  const ic = document.getElementById('indiceCharge'); if (ic) ic.value = idx.charge;
+  const iv = document.getElementById('indiceVitesse'); if (iv) iv.value = idx.vitesse;
+  const ich = document.getElementById('indiceChargeHidden'); if (ich) ich.value = idx.charge;
+  const ivh = document.getElementById('indiceVitesseHidden'); if (ivh) ivh.value = idx.vitesse;
 
   // Afficher le résultat dans le mini-finder
   const el = document.getElementById('miniFResult');
   el.dataset.vehicule = miniFVehicule;
   el.dataset.taille = taille;
+  el.dataset.charge = idx.charge;
+  el.dataset.vitesse = idx.vitesse;
   el.innerHTML = `
     ${vehicule ? `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;padding-bottom:0.6rem;border-bottom:1px solid rgba(77,166,255,0.2)">
       <span>🚗</span>
@@ -2749,6 +2873,16 @@ function showMiniResult(taille, label, vehicule) {
     <div style="font-family:var(--font-head);font-size:0.55rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.2rem">Taille trouvée</div>
     <div id="miniFTailleText" style="font-family:var(--font-head);font-size:1.4rem;font-weight:900;color:var(--gold)">${taille}</div>
     <div style="font-size:0.65rem;color:var(--text-dim);margin-top:0.1rem">${label}</div>
+    <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+      <div style="flex:1;background:rgba(201,160,84,0.1);border:1px solid var(--border-dim);padding:0.4rem 0.6rem;text-align:center">
+        <div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em">⚖️ Charge</div>
+        <div style="font-family:var(--font-head);font-size:1rem;font-weight:800;color:var(--gold)">${idx.charge}</div>
+      </div>
+      <div style="flex:1;background:rgba(201,160,84,0.1);border:1px solid var(--border-dim);padding:0.4rem 0.6rem;text-align:center">
+        <div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em">🏎️ Vitesse</div>
+        <div style="font-family:var(--font-head);font-size:1rem;font-weight:800;color:var(--gold)">${idx.vitesse}</div>
+      </div>
+    </div>
     <button onclick="applyTailleToForm()" style="margin-top:0.6rem;background:var(--gold);color:var(--black);border:none;padding:0.5rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;width:100%;min-height:40px">✓ Utiliser cette taille dans le formulaire</button>
   `;
   el.style.display = 'block';
@@ -2759,10 +2893,16 @@ function applyTailleToForm() {
   const result = document.getElementById('miniFResult');
   const taille = result.dataset.taille || miniFTailleFound;
   const vehicule = result.dataset.vehicule || miniFVehicule;
+  const charge = result.dataset.charge || getIndices(taille).charge;
+  const vitesse = result.dataset.vitesse || getIndices(taille).vitesse;
 
   if (taille) {
     document.getElementById('taillePneu').value = taille;
     document.getElementById('taille-group').style.display = 'flex';
+    const ic = document.getElementById('indiceCharge'); if (ic) ic.value = charge;
+    const iv = document.getElementById('indiceVitesse'); if (iv) iv.value = vitesse;
+    const ich = document.getElementById('indiceChargeHidden'); if (ich) ich.value = charge;
+    const ivh = document.getElementById('indiceVitesseHidden'); if (ivh) ivh.value = vitesse;
   }
   if (vehicule) {
     document.getElementById('vehiculeVisible').value = vehicule;
@@ -2909,34 +3049,39 @@ async function rdvSearchPlaque() {
       .trim();
 
     if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
-      showMiniResult(taillePneu, "Taille d'origine", vehiculeLabel);
+      const idx = getIndices(taillePneu);
+      showMiniResult(taillePneu, "Taille d'origine", vehiculeLabel, idx.charge, idx.vitesse);
     } else {
       const found = findTailleFromDB(marque, modele, annee);
       if (found) {
-        showMiniResult(found.taille, "Taille estimée", vehiculeLabel);
+        const idx = getIndices(found.taille);
+        showMiniResult(found.taille, "Taille estimée", vehiculeLabel, idx.charge, idx.vitesse);
       } else if (marque && modele) {
         try {
           const res = await fetch(ANTHROPIC_WORKER_URL, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 100,
-              messages: [{ role: 'user', content: `Taille pneu origine ${marque} ${modele} ${annee}. JSON uniquement: {"taille":"195/55 R16"}` }] })
+              messages: [{ role: 'user', content: `Taille pneu origine ${marque} ${modele} ${annee}. JSON uniquement: {"taille":"195/55 R16","charge":"87","vitesse":"H"}` }] })
           });
           const d = await res.json();
           const txt = (d.content || []).map(c => c.text || '').join('').replace(/```json|```/g,'').trim();
           const r = JSON.parse(txt);
-          showMiniResult(r.taille || '195/55 R16', "Taille estimée par IA", vehiculeLabel);
+          const idx = (r.charge && r.vitesse) ? r : getIndices(r.taille || '195/55 R16');
+          showMiniResult(r.taille || '195/55 R16', "Taille estimée par IA", vehiculeLabel, idx.charge, idx.vitesse);
         } catch(aiErr) {
-          showMiniResult('195/55 R16', 'Taille à confirmer', vehiculeLabel);
+          const idx = getIndices('195/55 R16');
+          showMiniResult('195/55 R16', 'Taille à confirmer', vehiculeLabel, idx.charge, idx.vitesse);
         }
       } else {
-        showMiniResult('205/55 R16', 'Taille à confirmer — appelez-nous', vehiculeLabel);
+        const idx = getIndices('205/55 R16');
+        showMiniResult('205/55 R16', 'Taille à confirmer — appelez-nous', vehiculeLabel, idx.charge, idx.vitesse);
       }
     }
   } catch(e) {
     console.error('rdvSearchPlaque error:', e);
-    // Récupérer le véhicule déjà affiché si possible
     const vLabel = (typeof vehiculeLabel !== 'undefined' && vehiculeLabel) ? vehiculeLabel : null;
-    showMiniResult('205/55 R16', 'Taille à confirmer — appelez-nous', vLabel);
+    const idx = getIndices('205/55 R16');
+    showMiniResult('205/55 R16', 'Taille à confirmer — appelez-nous', vLabel, idx.charge, idx.vitesse);
   }
 }
 
@@ -2949,21 +3094,31 @@ async function rdvSearchVoiture() {
   document.getElementById('miniFResult').style.display = 'none';
   const key = `${marque}_${modele}_${annee}`;
   if (taillesPneus[key]) {
-    setTimeout(() => showMiniResult(taillesPneus[key].taille, `${marque} ${modele} ${annee} · Origine`, `${marque} ${modele} ${annee}`), 400);
+    const idx = getIndices(taillesPneus[key].taille);
+    setTimeout(() => showMiniResult(taillesPneus[key].taille, `${marque} ${modele} ${annee} · Origine`, `${marque} ${modele} ${annee}`, idx.charge, idx.vitesse), 400);
+    return;
+  }
+  // Chercher d'abord dans taillesDB locale
+  const found = findTailleFromDB(marque, modele, annee);
+  if (found) {
+    const idx = getIndices(found.taille);
+    setTimeout(() => showMiniResult(found.taille, `${marque} ${modele} ${annee} · Origine estimée`, `${marque} ${modele} ${annee}`, idx.charge, idx.vitesse), 400);
     return;
   }
   try {
     const res = await fetch(ANTHROPIC_WORKER_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200,
-        messages: [{ role: 'user', content: `Taille pneu origine ${marque} ${modele} ${annee}. JSON uniquement: {"taille":"205/55 R16","label":"${marque} ${modele} ${annee}"}` }] })
+        messages: [{ role: 'user', content: `Taille pneu origine ${marque} ${modele} ${annee}. JSON uniquement: {"taille":"205/55 R16","charge":"91","vitesse":"V","label":"${marque} ${modele} ${annee}"}` }] })
     });
     const d = await res.json();
     const txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
     const r = JSON.parse(txt);
-    showMiniResult(r.taille, r.label, r.vehicule || null);
+    const idx = (r.charge && r.vitesse) ? r : getIndices(r.taille);
+    showMiniResult(r.taille, r.label, r.vehicule || `${marque} ${modele} ${annee}`, idx.charge, idx.vitesse);
   } catch(e) {
-    showMiniResult('205/55 R16', `${marque} ${modele} ${annee} · À confirmer`, `${marque} ${modele} ${annee}`);
+    const idx = getIndices('205/55 R16');
+    showMiniResult('205/55 R16', `${marque} ${modele} ${annee} · À confirmer`, `${marque} ${modele} ${annee}`, idx.charge, idx.vitesse);
   }
 }
 
@@ -3173,7 +3328,7 @@ renderCalendar();
 renderCalendar2();
 
 // === FORMULAIRES ===
-function sendRDV(prenom, nom, phone, email, date, heure, service, taille, vehicule, source_taille, successId, btnEl) {
+function sendRDV(prenom, nom, phone, email, date, heure, service, taille, vehicule, source_taille, indice_charge, indice_vitesse, successId, btnEl) {
   const manquants = [];
   if (!prenom) manquants.push('prénom');
   if (!phone) manquants.push('téléphone');
@@ -3220,7 +3375,9 @@ function sendRDV(prenom, nom, phone, email, date, heure, service, taille, vehicu
         taille_pneu:   taille || '—',
         vehicule:      vehicule || '—',
         source_taille: source_taille || '—',
-        message:       taille ? `Taille : ${taille}${vehicule ? ' · ' + vehicule : ''}` : '—',
+        indice_charge: indice_charge || '—',
+        indice_vitesse: indice_vitesse || '—',
+        message:       taille ? `Taille : ${taille}${indice_charge && indice_charge !== '—' ? ' · IC: ' + indice_charge : ''}${indice_vitesse && indice_vitesse !== '—' ? ' · IV: ' + indice_vitesse : ''}${vehicule ? ' · ' + vehicule : ''}` : '—',
         photo_pneu:    photoUrl ? `<img src="${photoUrl}" style="max-width:400px;border:2px solid #c9a054;" alt="Photo pneu">` : '—',
         photo_url:     photoUrl || ''
       }).then(onSuccess).catch(onError);
@@ -3253,6 +3410,8 @@ function submitForm() {
   const vehiculeManuel = document.getElementById('nomVehicule')?.value.trim() || '';
   const vehicule = vehiculeAuto || vehiculeManuel || '—';
   const source = document.getElementById('sourceTailleHidden')?.value || miniFSource || '—';
+  const indice_charge = document.getElementById('indiceChargeHidden')?.value || '—';
+  const indice_vitesse = document.getElementById('indiceVitesseHidden')?.value || '—';
   sendRDV(
     document.getElementById('fname').value.trim(),
     document.getElementById('lname').value.trim(),
@@ -3261,7 +3420,7 @@ function submitForm() {
     document.getElementById('date').value,
     document.getElementById('heure').value,
     document.getElementById('service').value,
-    taille, vehicule, source,
+    taille, vehicule, source, indice_charge, indice_vitesse,
     'formSuccess', btn
   );
 }
@@ -3273,6 +3432,8 @@ function submitForm2() {
   const vehiculeManuel = document.getElementById('nomVehicule2')?.value.trim() || '';
   const vehicule = vehiculeAuto || vehiculeManuel || '—';
   const source = document.getElementById('sourceTailleHidden2')?.value || miniFSource2 || '—';
+  const indice_charge = document.getElementById('indiceChargeHidden2')?.value || '—';
+  const indice_vitesse = document.getElementById('indiceVitesseHidden2')?.value || '—';
   sendRDV(
     document.getElementById('fname2').value.trim(),
     document.getElementById('lname2').value.trim(),
@@ -3281,7 +3442,7 @@ function submitForm2() {
     document.getElementById('date2').value,
     document.getElementById('heure2').value,
     document.getElementById('service2').value,
-    taille, vehicule, source,
+    taille, vehicule, source, indice_charge, indice_vitesse,
     'formSuccess2', btn
   );
 }
@@ -3306,10 +3467,11 @@ function switchMiniTab2(tab) {
   document.getElementById('mini-panel-' + tab + '2').classList.add('active');
 }
 
-function showMiniResult2(taille, label, vehicule) {
+function showMiniResult2(taille, label, vehicule, charge, vitesse) {
   miniFTailleFound2 = taille;
   miniFVehicule2 = vehicule || '';
   miniFSource2 = label || '';
+  const idx = (charge && vitesse) ? { charge, vitesse } : getIndices(taille);
 
   // Appliquer IMMÉDIATEMENT dans le formulaire sans attendre le clic
   const vh = document.getElementById('vehiculeHidden2');
@@ -3327,11 +3489,18 @@ function showMiniResult2(taille, label, vehicule) {
   if (vv) vv.value = miniFVehicule2;
   if (vg) vg.style.display = miniFVehicule2 ? 'flex' : 'none';
   if (svc && !svc.value) svc.value = 'Changement de pneus';
+  // Remplir indices mobile
+  const ic2 = document.getElementById('indiceCharge2'); if (ic2) ic2.value = idx.charge;
+  const iv2 = document.getElementById('indiceVitesse2'); if (iv2) iv2.value = idx.vitesse;
+  const ich2 = document.getElementById('indiceChargeHidden2'); if (ich2) ich2.value = idx.charge;
+  const ivh2 = document.getElementById('indiceVitesseHidden2'); if (ivh2) ivh2.value = idx.vitesse;
 
   // Afficher le résultat dans le mini-finder
   const el = document.getElementById('miniFResult2');
   el.dataset.vehicule = miniFVehicule2;
   el.dataset.taille = taille;
+  el.dataset.charge = idx.charge;
+  el.dataset.vitesse = idx.vitesse;
   el.innerHTML = `
     ${vehicule ? `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;padding-bottom:0.6rem;border-bottom:1px solid rgba(77,166,255,0.2)">
       <span>🚗</span>
@@ -3343,6 +3512,16 @@ function showMiniResult2(taille, label, vehicule) {
     <div style="font-family:var(--font-head);font-size:0.55rem;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.2rem">Taille de pneu</div>
     <div id="miniFTailleText2" style="font-family:var(--font-head);font-size:1.6rem;font-weight:900;color:var(--gold)">${taille}</div>
     <div style="font-size:0.65rem;color:var(--text-dim);margin-top:0.1rem">${label}</div>
+    <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+      <div style="flex:1;background:rgba(201,160,84,0.1);border:1px solid var(--border-dim);padding:0.4rem 0.6rem;text-align:center">
+        <div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em">⚖️ Charge</div>
+        <div style="font-family:var(--font-head);font-size:1rem;font-weight:800;color:var(--gold)">${idx.charge}</div>
+      </div>
+      <div style="flex:1;background:rgba(201,160,84,0.1);border:1px solid var(--border-dim);padding:0.4rem 0.6rem;text-align:center">
+        <div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em">🏎️ Vitesse</div>
+        <div style="font-family:var(--font-head);font-size:1rem;font-weight:800;color:var(--gold)">${idx.vitesse}</div>
+      </div>
+    </div>
     <button onclick="applyTailleToForm2()" style="margin-top:0.6rem;background:var(--gold);color:var(--black);border:none;padding:0.5rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;width:100%;min-height:40px">✓ Utiliser cette taille dans le formulaire</button>
   `;
   el.style.display = 'block';
@@ -3353,10 +3532,16 @@ function applyTailleToForm2() {
   const result = document.getElementById('miniFResult2');
   const taille = result.dataset.taille || miniFTailleFound2;
   const vehicule = result.dataset.vehicule || miniFVehicule2;
+  const charge = result.dataset.charge || getIndices(taille).charge;
+  const vitesse = result.dataset.vitesse || getIndices(taille).vitesse;
 
   if (taille) {
     document.getElementById('taillePneu2').value = taille;
     document.getElementById('taille-group2').style.display = 'flex';
+    const ic2 = document.getElementById('indiceCharge2'); if (ic2) ic2.value = charge;
+    const iv2 = document.getElementById('indiceVitesse2'); if (iv2) iv2.value = vitesse;
+    const ich2 = document.getElementById('indiceChargeHidden2'); if (ich2) ich2.value = charge;
+    const ivh2 = document.getElementById('indiceVitesseHidden2'); if (ivh2) ivh2.value = vitesse;
   }
   if (vehicule) {
     document.getElementById('vehiculeVisible2').value = vehicule;
@@ -3407,10 +3592,13 @@ async function rdvSearchPlaque2() {
     const taillePneu  = tailleBrute.replace(/([0-9]{3}\/[0-9]{2})\s*CM\s*([0-9]+)/i,'$1 R$2').replace(/([0-9]{3}\/[0-9]{2})\s*R\s*([0-9]+)/i,'$1 R$2').trim();
     const vehiculeLabel = (marque || modele) ? `${[marque,modele,version].filter(Boolean).join(' ')}${annee?' ('+annee+')':''}`.trim() : null;
     if (taillePneu && taillePneu.match(/\d{3}\/\d{2}/)) {
-      showMiniResult2(taillePneu, "Taille d'origine", vehiculeLabel);
+      const idx = getIndices(taillePneu);
+      showMiniResult2(taillePneu, "Taille d'origine", vehiculeLabel, idx.charge, idx.vitesse);
     } else {
       const found = findTailleFromDB(marque, modele, annee);
-      showMiniResult2(found ? found.taille : '205/55 R16', found ? "Taille estimée" : 'Taille courante — à confirmer', vehiculeLabel);
+      const t = found ? found.taille : '205/55 R16';
+      const idx = getIndices(t);
+      showMiniResult2(t, found ? "Taille estimée" : 'Taille courante — à confirmer', vehiculeLabel, idx.charge, idx.vitesse);
     }
   } catch(e) {
     showMiniResult2('Non trouvé', 'Appelez-nous : 02 40 50 70 24');
@@ -3426,20 +3614,31 @@ async function rdvSearchVoiture2() {
   document.getElementById('miniFResult2').style.display = 'none';
   const key = `${marque}_${modele}_${annee}`;
   if (taillesPneus[key]) {
-    setTimeout(() => showMiniResult2(taillesPneus[key].taille, `${marque} ${modele} ${annee} · Origine`), 400);
+    const idx = getIndices(taillesPneus[key].taille);
+    setTimeout(() => showMiniResult2(taillesPneus[key].taille, `${marque} ${modele} ${annee} · Origine`, `${marque} ${modele} ${annee}`, idx.charge, idx.vitesse), 400);
+    return;
+  }
+  const found = findTailleFromDB(marque, modele, annee);
+  if (found) {
+    const idx = getIndices(found.taille);
+    setTimeout(() => showMiniResult2(found.taille, `${marque} ${modele} ${annee} · Origine estimée`, `${marque} ${modele} ${annee}`, idx.charge, idx.vitesse), 400);
     return;
   }
   try {
     const res = await fetch(ANTHROPIC_WORKER_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200,
-        messages: [{ role: 'user', content: `Taille pneu origine ${marque} ${modele} ${annee}. JSON uniquement: {"taille":"205/55 R16","label":"${marque} ${modele} ${annee}"}` }] })
+        messages: [{ role: 'user', content: `Taille pneu origine ${marque} ${modele} ${annee}. JSON uniquement: {"taille":"205/55 R16","charge":"91","vitesse":"V","label":"${marque} ${modele} ${annee}"}` }] })
     });
     const d = await res.json();
     const txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
     const r = JSON.parse(txt);
-    showMiniResult2(r.taille, r.label);
-  } catch(e) { showMiniResult2('205/55 R16', `${marque} ${modele} ${annee} · À confirmer`); }
+    const idx = (r.charge && r.vitesse) ? r : getIndices(r.taille);
+    showMiniResult2(r.taille, r.label, `${marque} ${modele} ${annee}`, idx.charge, idx.vitesse);
+  } catch(e) {
+    const idx = getIndices('205/55 R16');
+    showMiniResult2('205/55 R16', `${marque} ${modele} ${annee} · À confirmer`, `${marque} ${modele} ${annee}`, idx.charge, idx.vitesse);
+  }
 }
 
 function rdvHandlePhoto2(e) {
