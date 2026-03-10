@@ -3324,12 +3324,12 @@ const taillesDB = {
   'RENAULT|TRAFIC': { default: '215/65 R16' },
   'RENAULT|KANGOO': { default: '195/65 R15' },
   // PEUGEOT
-  'PEUGEOT|208': { '2019': '205/45 R17', '2020': '205/45 R17', '2021': '205/45 R17', '2022': '205/45 R17', default: '195/55 R16' },
-  'PEUGEOT|308': { '2021': '215/50 R17', '2022': '215/50 R17', default: '205/55 R16' },
-  'PEUGEOT|3008': { default: '225/55 R17' },
+  'PEUGEOT|208': { '2019': '205/45 R17', '2020': '205/45 R17', '2021': '205/45 R17', '2022': '205/45 R17', '2023': '205/45 R17', default: '195/55 R16' },
+  'PEUGEOT|308': { '2021': '185/55 R18', '2022': '185/55 R18', '2023': '185/55 R18', '2024': '185/55 R18', '2019': '205/60 R16', '2020': '205/60 R16', default: '205/55 R16' },
+  'PEUGEOT|3008': { '2021': '235/50 R19', '2022': '235/50 R19', '2023': '235/50 R19', default: '225/55 R17' },
   'PEUGEOT|5008': { default: '235/50 R18' },
-  'PEUGEOT|2008': { default: '205/55 R17' },
-  'PEUGEOT|508': { default: '225/45 R17' },
+  'PEUGEOT|2008': { '2019': '215/55 R17', '2020': '215/55 R17', '2021': '215/55 R17', default: '205/55 R17' },
+  'PEUGEOT|508': { '2019': '235/45 R18', '2020': '235/45 R18', default: '225/45 R17' },
   'PEUGEOT|EXPERT': { default: '215/65 R16' },
   // CITROEN
   'CITROEN|C3': { '2017': '195/55 R16', '2018': '195/55 R16', '2019': '195/55 R16', default: '185/65 R15' },
@@ -3459,6 +3459,11 @@ const indicesStandard = {
   '215/45 R18': { charge: '93', vitesse: 'W' },
   '215/50 R18': { charge: '92', vitesse: 'V' },
   '215/55 R18': { charge: '99', vitesse: 'V' },
+  '185/55 R18': { charge: '82', vitesse: 'V' },
+  '195/55 R18': { charge: '83', vitesse: 'V' },
+  '205/55 R18': { charge: '96', vitesse: 'V' },
+  '195/50 R18': { charge: '80', vitesse: 'V' },
+  '205/50 R18': { charge: '90', vitesse: 'W' },
   '225/40 R18': { charge: '92', vitesse: 'Y' },
   '225/45 R18': { charge: '95', vitesse: 'W' },
   '225/50 R18': { charge: '99', vitesse: 'W' },
@@ -3705,6 +3710,38 @@ function ccUpdateMotos() {
 
 function ccUpdateAnnees() {
   ccSetStep(4);
+  // Auto-remplir les dimensions dès que marque+modele+annee sont sélectionnés
+  const marque = document.getElementById('marque').value;
+  const modele = document.getElementById('modele').value;
+  const annee  = document.getElementById('annee').value;
+  if (marque && modele) {
+    const found = findTailleFromDB(marque, modele, annee);
+    if (found && found.taille) {
+      const m = found.taille.match(/^(\d{3})\/(\d{2})\s*R\s*(\d{2})$/);
+      if (m) {
+        const selL = document.getElementById('cc-largeur');
+        const selH = document.getElementById('cc-hauteur');
+        const selD = document.getElementById('cc-diametre');
+        const selC = document.getElementById('cc-charge');
+        const selV = document.getElementById('cc-vitesse');
+        if (selL) selL.value = m[1];
+        if (selH) selH.value = m[2];
+        if (selD) selD.value = m[3];
+        // Pré-remplir indice charge et vitesse
+        const idx = getIndices(found.taille);
+        if (selC && idx.charge !== '—') selC.value = idx.charge;
+        if (selV && idx.vitesse !== '—') {
+          // Les options sont au format "H (210 km/h)" — on cherche celle qui commence par idx.vitesse
+          for (const opt of selV.options) {
+            if (opt.text.startsWith(idx.vitesse + ' ') || opt.text === idx.vitesse) {
+              selV.value = opt.value || opt.text;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 
@@ -3740,8 +3777,21 @@ async function searchVoiture() {
   const loadingEl = document.getElementById('voitureLoading');
   const resultEl  = document.getElementById('voitureResult');
 
+  // ── 1. Résoudre la taille d'origine du véhicule ──
+  let tailleOrigine = tailleManuelle;
+
+  if (!tailleOrigine && marque && modele) {
+    const key = `${marque}_${modele}_${annee}`;
+    if (taillesPneus && taillesPneus[key]) {
+      tailleOrigine = taillesPneus[key].taille;
+    } else {
+      const fromDB = findTailleFromDB(marque, modele, annee);
+      if (fromDB) tailleOrigine = fromDB.taille;
+    }
+  }
+
   // Afficher loading avec texte des paramètres utilisés
-  const tailleAffichage = tailleManuelle || tailleOrigine || '';
+  const tailleAffichage = tailleOrigine || '';
   const parametresAffichage = [
     marque && modele ? `${marque} ${modele}${annee ? ' ' + annee : ''}` : marque || modele,
     tailleAffichage,
@@ -3754,19 +3804,6 @@ async function searchVoiture() {
   loadingEl.style.display = 'block';
   resultEl.classList.remove('show');
   resultEl.innerHTML = '';
-
-  // ── 1. Résoudre la taille d'origine du véhicule ──
-  let tailleOrigine = tailleManuelle;
-
-  if (!tailleOrigine && marque && modele) {
-    const key = `${marque}_${modele}_${annee}`;
-    if (taillesPneus[key]) {
-      tailleOrigine = taillesPneus[key].taille;
-    } else {
-      const fromDB = findTailleFromDB(marque, modele, annee);
-      if (fromDB) tailleOrigine = fromDB.taille;
-    }
-  }
 
   // ── 2. Construire le prompt pour l'IA ──
   const vehiculeStr    = [marque, modele, motorisation, annee].filter(Boolean).join(' ') || 'non précisé';
