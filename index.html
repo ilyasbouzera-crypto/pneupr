@@ -115,7 +115,6 @@
         }
       ],
       "priceRange": "€€",
-      "servesCuisine": null,
       "areaServed": {
         "@type": "GeoCircle",
         "geoMidpoint": {
@@ -126,7 +125,7 @@
         "geoRadius": "30000"
       },
       "sameAs": [
-        "https://www.google.com/maps/place/SOS Pneu+Nantes",
+        "https://maps.google.com/?q=174+Boulevard+Jules+Verne+44000+Nantes",
         "https://www.facebook.com/pneupronantes"
       ]
     },
@@ -253,8 +252,10 @@ body {
   font-size: 15px;
   line-height: 1.6;
   overflow-x: hidden;
-  cursor: none;
   -webkit-text-size-adjust: 100%;
+}
+@media (pointer: fine) {
+  body { cursor: none; }
 }
 
 /* ═══════════════════════════════════════
@@ -453,7 +454,7 @@ nav {
 ═══════════════════════════════════════ */
 .mobile-sticky-bar {
   display: none;
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 10000;
   background: rgba(255,255,255,0.98);
   border-top: 1px solid var(--border);
   padding: 0.7rem 1rem calc(0.7rem + var(--safe-bottom));
@@ -1167,7 +1168,7 @@ section { padding: 6rem 5vw; }
   border-radius: 2px;
   transition: background 0.15s;
 }
-.tr-rdv-btn:hover { background: #CC0000; }
+.tr-rdv-btn:hover { background: #FFCC2B; color: #001a4d; }
 
 /* Footer */
 .tr-footer {
@@ -1998,8 +1999,8 @@ footer { background: #002F78; color: rgba(255,255,255,0.90); padding: 4rem 5vw 2
         <input type="text" id="vehiculeVisible" readonly style="background:rgba(77,166,255,0.06);border-color:var(--gold);color:var(--offwhite);font-family:var(--font-head);font-weight:700;font-size:0.95rem;letter-spacing:0.05em;cursor:default" aria-readonly="true">
       </div>
       <div class="rdv-group" id="taille-group" style="display:none">
-        <label for="taillePneu">Taille de pneu détectée</label>
-        <input type="text" id="taillePneu" readonly style="background:rgba(77,166,255,0.06);border-color:var(--gold);color:var(--gold);font-family:var(--font-head);font-weight:700;font-size:1rem;letter-spacing:0.1em;cursor:default" aria-readonly="true">
+        <label for="taillePneu">✅ Pneu sélectionné — Taille</label>
+        <input type="text" id="taillePneu" readonly style="background:rgba(74,222,128,0.08);border-color:#4ade80;color:var(--gold);font-family:var(--font-head);font-weight:700;font-size:1rem;letter-spacing:0.1em;cursor:default" aria-readonly="true">
         <div id="indices-group" style="display:flex;gap:0.6rem;margin-top:0.4rem">
           <div style="flex:1">
             <label style="font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.25rem;display:block">⚖️ Indice de charge</label>
@@ -3077,11 +3078,14 @@ function utilisierTailleBtn(taille, vehicule, btn, charge, vitesse) {
   const iv1 = document.getElementById('indiceVitesse'); if (iv1) iv1.value = idx.vitesse;
   const ich1 = document.getElementById('indiceChargeHidden'); if (ich1) ich1.value = idx.charge;
   const ivh1 = document.getElementById('indiceVitesseHidden'); if (ivh1) ivh1.value = idx.vitesse;
+  // Service desktop
+  const svc1 = document.getElementById('service');
+  if (svc1 && !svc1.value) svc1.value = 'Changement de pneus';
   if (vehicule) {
     const nv1 = document.getElementById('nomVehicule'); if (nv1) nv1.value = vehicule;
     const vh1 = document.getElementById('vehiculeHidden'); if (vh1) vh1.value = vehicule;
     const vv1 = document.getElementById('vehiculeVisible');
-    if (vv1) { vv1.value = vehicule; document.getElementById('vehicule-group').style.display = 'flex'; }
+    if (vv1) { vv1.value = vehicule; const vg1 = document.getElementById('vehicule-group'); if(vg1) vg1.style.display = 'flex'; }
   }
   const input2 = document.getElementById('taillePneu2');
   const group2 = document.getElementById('taille-group2');
@@ -3091,19 +3095,33 @@ function utilisierTailleBtn(taille, vehicule, btn, charge, vitesse) {
   const iv2 = document.getElementById('indiceVitesse2'); if (iv2) iv2.value = idx.vitesse;
   const ich2 = document.getElementById('indiceChargeHidden2'); if (ich2) ich2.value = idx.charge;
   const ivh2 = document.getElementById('indiceVitesseHidden2'); if (ivh2) ivh2.value = idx.vitesse;
+  // Service mobile
+  const svc2 = document.getElementById('service2');
+  if (svc2 && !svc2.value) svc2.value = 'Changement de pneus';
   if (vehicule) {
     const nv2 = document.getElementById('nomVehicule2'); if (nv2) nv2.value = vehicule;
     const vh2 = document.getElementById('vehiculeHidden2'); if (vh2) vh2.value = vehicule;
     const vv2 = document.getElementById('vehiculeVisible2');
-    if (vv2) { vv2.value = vehicule; document.getElementById('vehicule-group2').style.display = 'flex'; }
+    if (vv2) { vv2.value = vehicule; const vg2 = document.getElementById('vehicule-group2'); if(vg2) vg2.style.display = 'flex'; }
   }
-  const form = document.getElementById('contact') || document.getElementById('contact-mobile');
-  if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Scroll vers le bon formulaire selon la taille d'écran
+  const isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    const mobileContact = document.getElementById('contact-mobile');
+    if (mobileContact) {
+      mobileContact.style.display = 'block';
+      setTimeout(() => mobileContact.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  } else {
+    const desktopContact = document.getElementById('contact');
+    if (desktopContact) setTimeout(() => desktopContact.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }
   if (btn) {
     const origText = btn.textContent;
     btn.textContent = '✅ Taille ajoutée au formulaire !';
     btn.style.background = '#4ade80';
-    setTimeout(() => { btn.textContent = origText; btn.style.background = 'var(--gold)'; }, 2500);
+    btn.style.color = '#001a4d';
+    setTimeout(() => { btn.textContent = origText; btn.style.background = 'var(--gold)'; btn.style.color = 'var(--black)'; }, 2500);
   }
 }
 
@@ -3698,7 +3716,7 @@ Format strict :
     }
   ]
 }
-Varie les marques (Michelin, Continental, Bridgestone, Goodyear, Pirelli, Hankook, Yokohama…). Adapte les prix réalistes au marché français 2025. Tous les pneus doivent correspondre à la taille ${dimensionsStr}.`;
+IMPORTANT: Le champ "indice" est OBLIGATOIRE pour chaque pneu (ex: "91V", "98W", "95H"). Varie les marques (Michelin, Continental, Bridgestone, Goodyear, Pirelli, Hankook, Yokohama…). Adapte les prix réalistes au marché français 2025. Tous les pneus doivent correspondre à la taille ${dimensionsStr}.`;
 
   try {
     const res = await fetch(ANTHROPIC_WORKER_URL, {
@@ -3710,12 +3728,26 @@ Varie les marques (Michelin, Continental, Bridgestone, Goodyear, Pirelli, Hankoo
       })
     });
     const d = await res.json();
-    let txt = (d.content || []).map(c => c.text || '').join('').replace(/```json|```/g, '').trim();
+    let rawText = (d.content || []).map(c => c.text || '').join('').trim();
+    // Extraire le JSON même si entouré de texte ou backticks
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Pas de JSON dans la réponse');
+    let txt = jsonMatch[0];
     const parsed = JSON.parse(txt);
+    // Garantir indice de charge sur chaque pneu
+    if (parsed.resultats) {
+      parsed.resultats = parsed.resultats.map(p => {
+        if (!p.indice || p.indice === '—') {
+          const idx = getIndices(p.taille || parsed.taille_origine || '205/55 R16');
+          p.indice = idx.charge + idx.vitesse;
+        }
+        return p;
+      });
+    }
     loadingEl.style.display = 'none';
     showTireResults(resultEl, parsed, vehiculeStr);
     // Scroll vers les résultats
-    setTimeout(() => resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+    setTimeout(() => resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
   } catch(e) {
     loadingEl.style.display = 'none';
     if (tailleOrigine) {
@@ -3775,7 +3807,7 @@ function showTireResults(el, data, vehiculeStr) {
           <div class="tr-card-left">
             <div class="tr-card-brand">${p.marque}</div>
             <div class="tr-card-model">${p.modele}</div>
-            <div class="tr-card-taille">${p.taille} <span class="tr-indice">${p.indice || (idx.charge + idx.vitesse)}</span></div>
+            <div class="tr-card-taille">${p.taille} <span class="tr-indice">${p.indice || (idx.charge + ' ' + idx.vitesse)}</span></div>
             <div class="tr-card-tags">
               <span class="tr-tag tr-tag-saison">${saisonIcon(p.saison)} ${p.saison || 'Été'}</span>
               ${p.runflat ? '<span class="tr-tag">Run Flat</span>' : ''}
@@ -3817,8 +3849,8 @@ function showTireResults(el, data, vehiculeStr) {
           ${p.points_forts.map(pt => `<li>✓ ${pt}</li>`).join('')}
         </ul>` : ''}
 
-        <button class="tr-rdv-btn" onclick="utilisierTailleBtn('${p.taille}','${(vehicule).replace(/'/g,"\\'")}',this,'${idx.charge}','${idx.vitesse}')">
-          → Prendre RDV avec ce pneu
+        <button class="tr-rdv-btn" onclick="utilisierTailleBtn('${p.taille}','${(vehicule).replace(/'/g,"\\'")}',this,'${idx.charge}','${idx.vitesse}'); document.getElementById('service') && (document.getElementById('service').value='Changement de pneus'); document.getElementById('service2') && (document.getElementById('service2').value='Changement de pneus');">
+          → Prendre RDV avec ce pneu (${p.marque} ${p.modele})
         </button>
       </div>`;
   });
@@ -4988,16 +5020,17 @@ window.addEventListener('scroll', () => {
     background: #f87171; border-radius: 50%; border: 1.5px solid #ffffff;
   }
 
-  /* Panel chat : quasi plein écran sur mobile */
+  /* Panel chat : quasi plein écran sur mobile, au-dessus de la sticky bar */
   #ai-chat-panel {
     position: fixed;
     bottom: calc(64px + env(safe-area-inset-bottom));
     left: 0; right: 0;
     width: 100%;
-    height: calc(100vh - 64px - env(safe-area-inset-bottom) - env(safe-area-inset-top));
+    height: calc(100vh - 64px - env(safe-area-inset-bottom) - env(safe-area-inset-top) - 64px);
     border-radius: 16px 16px 0 0;
     border-left: none; border-right: none; border-bottom: none;
     transform: translateY(100%); opacity: 1;
+    z-index: 9998;
     transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
   }
   #ai-chat-panel.open {
