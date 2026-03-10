@@ -3648,9 +3648,10 @@ async function searchVoiture() {
   const resultEl  = document.getElementById('voitureResult');
 
   // Afficher loading avec texte des paramètres utilisés
+  const tailleAffichage = tailleManuelle || tailleOrigine || '';
   const parametresAffichage = [
     marque && modele ? `${marque} ${modele}${annee ? ' ' + annee : ''}` : marque || modele,
-    tailleManuelle,
+    tailleAffichage,
     charge ? `Charge ${charge}` : '',
     vitesse ? `Vitesse ${vitesse}` : '',
     saison,
@@ -3664,7 +3665,7 @@ async function searchVoiture() {
   // ── 1. Résoudre la taille d'origine du véhicule ──
   let tailleOrigine = tailleManuelle;
 
-  if (!tailleOrigine && marque && modele && annee) {
+  if (!tailleOrigine && marque && modele) {
     const key = `${marque}_${modele}_${annee}`;
     if (taillesPneus[key]) {
       tailleOrigine = taillesPneus[key].taille;
@@ -3676,7 +3677,9 @@ async function searchVoiture() {
 
   // ── 2. Construire le prompt pour l'IA ──
   const vehiculeStr    = [marque, modele, motorisation, annee].filter(Boolean).join(' ') || 'non précisé';
-  const dimensionsStr  = tailleManuelle || tailleOrigine || 'à déterminer selon le véhicule';
+  // Si taille inconnue, demander à l'IA de la déterminer (ne pas laisser vide)
+  const dimensionsStr  = tailleManuelle || tailleOrigine || null;
+
   const filtresStr     = [
     charge   ? `Indice de charge minimum : ${charge}` : '',
     vitesse  ? `Indice de vitesse : ${vitesse.split(' ')[0]}` : '',
@@ -3685,21 +3688,26 @@ async function searchVoiture() {
     renforce ? `Renforcé : ${renforce}` : '',
   ].filter(Boolean).join(', ') || 'aucun filtre supplémentaire';
 
+  // Taille à utiliser dans le prompt — si inconnue, demander à l'IA de la déterminer réellement
+  const taillePrompt = dimensionsStr
+    ? dimensionsStr
+    : `à déterminer pour un ${vehiculeStr} (donne la vraie taille d'origine homologuée)`;
+
   const prompt = `Tu es un expert pneumatique chez SOS Pneu Nantes.
 Véhicule : ${vehiculeStr}
-Taille recherchée : ${dimensionsStr}
+${dimensionsStr ? `Taille d'origine : ${dimensionsStr}` : `Détermine la vraie taille d'origine homologuée pour ce véhicule : ${vehiculeStr}`}
 Filtres supplémentaires : ${filtresStr}
 
-Génère une liste de 4 pneus correspondant exactement à ces critères. Réponds UNIQUEMENT en JSON valide, sans markdown, sans explication, sans texte avant ou après.
+Génère une liste de 4 pneus réels adaptés à ce véhicule. Réponds UNIQUEMENT en JSON valide, sans markdown, sans explication, sans texte avant ou après.
 Format strict :
 {
-  "taille_origine": "${dimensionsStr !== 'à déterminer selon le véhicule' ? dimensionsStr : '205/55 R16'}",
+  "taille_origine": "${dimensionsStr || 'LA_VRAIE_TAILLE_DU_VEHICULE'}",
   "vehicule": "${vehiculeStr}",
   "resultats": [
     {
       "marque": "Michelin",
       "modele": "Primacy 4+",
-      "taille": "${dimensionsStr !== 'à déterminer selon le véhicule' ? dimensionsStr : '205/55 R16'}",
+      "taille": "${dimensionsStr || 'LA_VRAIE_TAILLE_DU_VEHICULE'}",
       "indice": "91V",
       "saison": "${saison || 'Été'}",
       "technologie": "Michelin Total Performance",
@@ -3716,7 +3724,12 @@ Format strict :
     }
   ]
 }
-IMPORTANT: Le champ "indice" est OBLIGATOIRE pour chaque pneu (ex: "91V", "98W", "95H"). Varie les marques (Michelin, Continental, Bridgestone, Goodyear, Pirelli, Hankook, Yokohama…). Adapte les prix réalistes au marché français 2025. Tous les pneus doivent correspondre à la taille ${dimensionsStr}.`;
+RÈGLES STRICTES:
+1. Le champ "indice" est OBLIGATOIRE (ex: "91V", "98W", "95H") — jamais vide
+2. La taille_origine DOIT être une vraie taille homologuée existante (ex: 205/55 R16, pas 165/30 R13)
+3. Les 4 pneus doivent tous avoir la MÊME taille que taille_origine
+4. Varie les marques : Michelin, Continental, Bridgestone, Goodyear
+5. Prix réalistes marché français 2025`;
 
   try {
     const res = await fetch(ANTHROPIC_WORKER_URL, {
@@ -3734,6 +3747,19 @@ IMPORTANT: Le champ "indice" est OBLIGATOIRE pour chaque pneu (ex: "91V", "98W",
     if (!jsonMatch) throw new Error('Pas de JSON dans la réponse');
     let txt = jsonMatch[0];
     const parsed = JSON.parse(txt);
+    // Valider la taille_origine reçue — rejeter les tailles invalides (ex: 165/30 R13)
+    const tailleRecu = parsed.taille_origine || '';
+    const tailleValide = tailleRecu.match(/^(1[4-9]\d|2\d{2})\/(3[0-9]|4\d|5\d|6\d|7\d) R(1[2-9]|2\d)$/);
+    if (!tailleValide && dimensionsStr) {
+      // Forcer la taille connue si l'IA a retourné une taille invalide
+      parsed.taille_origine = dimensionsStr;
+      if (parsed.resultats) parsed.resultats.forEach(p => { p.taille = dimensionsStr; });
+    } else if (!tailleValide && !dimensionsStr) {
+      // Taille inconnue ET invalide → utiliser la taille DB par défaut pour ce véhicule
+      const tailleDefaut = findTailleFromDB(marque, modele, '') || { taille: '205/55 R16' };
+      parsed.taille_origine = tailleDefaut.taille;
+      if (parsed.resultats) parsed.resultats.forEach(p => { p.taille = tailleDefaut.taille; });
+    }
     // Garantir indice de charge sur chaque pneu
     if (parsed.resultats) {
       parsed.resultats = parsed.resultats.map(p => {
