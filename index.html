@@ -2000,6 +2000,7 @@ footer { background: #002F78; color: rgba(255,255,255,0.90); padding: 4rem 5vw 2
       </div>
       <div class="rdv-group" id="taille-group" style="display:none">
         <label for="taillePneu">✅ Pneu sélectionné — Taille</label>
+        <div id="pneuChoisiVisible" style="display:none;margin-bottom:0.4rem;padding:0.4rem 0.7rem;background:rgba(74,222,128,0.08);border:1px solid #4ade80;font-family:var(--font-head);font-weight:700;font-size:0.78rem;color:var(--gold);letter-spacing:0.05em;"></div>
         <input type="text" id="taillePneu" readonly style="background:rgba(74,222,128,0.08);border-color:#4ade80;color:var(--gold);font-family:var(--font-head);font-weight:700;font-size:1rem;letter-spacing:0.1em;cursor:default" aria-readonly="true">
         <div id="indices-group" style="display:flex;gap:0.6rem;margin-top:0.4rem">
           <div style="flex:1">
@@ -2015,6 +2016,7 @@ footer { background: #002F78; color: rgba(255,255,255,0.90); padding: 4rem 5vw 2
         <input type="hidden" id="sourceTailleHidden" value="">
         <input type="hidden" id="indiceChargeHidden" value="">
         <input type="hidden" id="indiceVitesseHidden" value="">
+        <input type="hidden" id="pneuChoisiHidden" value="">
       </div>
       <div class="rdv-group photo-jointe-group" id="photo-jointe-group">
         <label>📷 Photo jointe</label>
@@ -2208,7 +2210,8 @@ footer { background: #002F78; color: rgba(255,255,255,0.90); padding: 4rem 5vw 2
         <input type="text" id="vehiculeVisible2" readonly style="background:rgba(77,166,255,0.06);border-color:var(--gold);color:var(--offwhite);font-family:var(--font-head);font-weight:700;font-size:0.95rem;letter-spacing:0.05em;cursor:default">
       </div>
       <div class="rdv-group" id="taille-group2" style="display:none">
-        <label for="taillePneu2">Taille de pneu détectée</label>
+        <label for="taillePneu2">✅ Pneu sélectionné — Taille</label>
+        <div id="pneuChoisiVisible2" style="display:none;margin-bottom:0.4rem;padding:0.4rem 0.7rem;background:rgba(74,222,128,0.08);border:1px solid #4ade80;font-family:var(--font-head);font-weight:700;font-size:0.78rem;color:var(--gold);letter-spacing:0.05em;"></div>
         <input type="text" id="taillePneu2" readonly style="background:rgba(77,166,255,0.06);border-color:var(--gold);color:var(--gold);font-family:var(--font-head);font-weight:700;font-size:1rem;letter-spacing:0.1em;cursor:default">
         <div id="indices-group2" style="display:flex;gap:0.6rem;margin-top:0.4rem">
           <div style="flex:1">
@@ -2224,6 +2227,7 @@ footer { background: #002F78; color: rgba(255,255,255,0.90); padding: 4rem 5vw 2
         <input type="hidden" id="sourceTailleHidden2" value="">
         <input type="hidden" id="indiceChargeHidden2" value="">
         <input type="hidden" id="indiceVitesseHidden2" value="">
+        <input type="hidden" id="pneuChoisiHidden2" value="">
       </div>
       <div class="rdv-group photo-jointe-group" id="photo-jointe-group2">
         <label>📷 Photo jointe</label>
@@ -3060,22 +3064,64 @@ function utilisierTaille(taille, vehicule) {
 function handleResultBtn(btn) {
   const taille = btn.dataset.taille;
   const vehicule = btn.dataset.vehicule || '';
-  const charge = btn.dataset.charge && btn.dataset.charge !== '—' ? btn.dataset.charge : getIndices(taille).charge;
-  const vitesse = btn.dataset.vitesse && btn.dataset.vitesse !== '—' ? btn.dataset.vitesse : getIndices(taille).vitesse;
+  const fb = getIndices(taille);
+  const charge = btn.dataset.charge && btn.dataset.charge !== '—' ? btn.dataset.charge : fb.charge;
+  const vitesse = btn.dataset.vitesse && btn.dataset.vitesse !== '—' ? btn.dataset.vitesse : fb.vitesse;
+  const indice = charge + vitesse; // ex: "91V"
   const isPhoto = btn.dataset.isphoto === 'oui';
   if (isPhoto) {
     joindrPhotoAuFormulaire(taille, vehicule, btn, charge, vitesse);
   } else {
-    utilisierTailleBtn(taille, vehicule, btn, charge, vitesse);
+    utilisierTailleBtn(taille, vehicule, btn, indice, '');
   }
 }
 
+// Sélection d'un pneu depuis le catalogue (lit les data-attributes pour éviter les problèmes d'échappement)
+function rdvSelectPneu(btn) {
+  var taille  = btn.getAttribute('data-taille')  || '';
+  var vehicule= btn.getAttribute('data-vehicule') || '';
+  var indice  = btn.getAttribute('data-indice')   || '';
+  var label   = btn.getAttribute('data-label')    || '';
+  utilisierTailleBtn(taille, vehicule, btn, indice, label);
+  var s1 = document.getElementById('service');
+  var s2 = document.getElementById('service2');
+  if (s1) s1.value = 'Changement de pneus';
+  if (s2) s2.value = 'Changement de pneus';
+}
+
 // Injecter taille depuis bouton (version sans event.target)
-function utilisierTailleBtn(taille, vehicule, btn, charge, vitesse) {
-  const idx = (charge && vitesse && charge !== '—' && vitesse !== '—') ? { charge, vitesse } : getIndices(taille);
+function utilisierTailleBtn(taille, vehicule, btn, indiceOuCharge, pneuLabel) {
+  // indiceOuCharge peut être "91V", "91 V", ou juste "91"
+  var indiceStr = String(indiceOuCharge || '').trim();
+  var chargeVal, vitesseVal;
+  if (indiceStr.match(/^[0-9]+[A-Za-z]+$/)) {
+    // Format "91V" → charge="91", vitesse="91V" (indice complet)
+    chargeVal  = indiceStr.replace(/[A-Za-z]/g, '').trim();
+    vitesseVal = indiceStr; // indice complet ex: 91V
+  } else if (indiceStr.match(/^[0-9]+\s+[A-Za-z]+$/)) {
+    // Format "91 V" → charge="91", vitesse="91V"
+    var parts = indiceStr.split(/\s+/);
+    chargeVal  = parts[0];
+    vitesseVal = parts[0] + parts[1]; // ex: 91V
+  } else {
+    // Fallback base de données
+    var fb = getIndices(taille);
+    chargeVal  = fb.charge;
+    vitesseVal = fb.charge + fb.vitesse; // ex: 91V
+  }
+  var idx = { charge: chargeVal || '—', vitesse: vitesseVal || '—' };
   const input1 = document.getElementById('taillePneu');
   const group1 = document.getElementById('taille-group');
   if (input1) { input1.value = taille; if (group1) group1.style.display = 'flex'; }
+  // Pneu choisi complet
+  const pneuDetail = (pneuLabel && pneuLabel.trim()) ? pneuLabel.trim() : taille;
+  const pch1 = document.getElementById('pneuChoisiHidden'); if (pch1) pch1.value = pneuDetail;
+  const pch2 = document.getElementById('pneuChoisiHidden2'); if (pch2) pch2.value = pneuDetail;
+  // Affichage visible dans le formulaire
+  const pcv1 = document.getElementById('pneuChoisiVisible');
+  if (pcv1) { if (pneuLabel && pneuLabel.trim()) { pcv1.textContent = '🔵 ' + pneuDetail; pcv1.style.display = 'block'; } else { pcv1.style.display = 'none'; } }
+  const pcv2 = document.getElementById('pneuChoisiVisible2');
+  if (pcv2) { if (pneuLabel && pneuLabel.trim()) { pcv2.textContent = '🔵 ' + pneuDetail; pcv2.style.display = 'block'; } else { pcv2.style.display = 'none'; } }
   // Indices desktop
   const ic1 = document.getElementById('indiceCharge'); if (ic1) ic1.value = idx.charge;
   const iv1 = document.getElementById('indiceVitesse'); if (iv1) iv1.value = idx.vitesse;
@@ -3139,7 +3185,7 @@ function joindrPhotoAuFormulaire(taille, vehicule, btn, charge, vitesse) {
 
   // Remplir la taille si détectée
   if (taille && taille !== '—' && taille !== 'Photo illisible') {
-    utilisierTailleBtn(taille, vehicule, null, charge, vitesse);
+    utilisierTailleBtn(taille, vehicule, null, charge + vitesse, '');
   }
 
   // Afficher la photo dans les deux formulaires
@@ -3203,9 +3249,49 @@ const IMGBB_API_KEY = 'e267ec595087c903cd7d524456be9356';
 const SIV_API_URL   = 'https://api.apiplaqueimmatriculation.com/plaque';
 const SIV_API_TOKEN = 'TokenDemo2026B';
 
-// ═══ CLOUDFLARE WORKER PROXY ═══
-// Remplacez par l'URL de votre Worker après déploiement
-const ANTHROPIC_WORKER_URL = 'https://pneupro-ai.bouzerailyas.workers.dev';
+// ═══ GROQ API — GRATUIT ═══
+const GROQ_API_KEY = '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';
+const ANTHROPIC_WORKER_URL = null;
+
+// Adaptateur Groq — traduit le format Anthropic vers OpenAI/Groq et retourne le même format
+async function anthropicFetch(body) {
+  // Requêtes SIV proxy ignorées (Worker désactivé)
+  if (body.siv_proxy) return { content: [{ text: '{}' }] };
+
+  // Convertir messages Anthropic → format OpenAI
+  const messages = [];
+  if (body.system) messages.push({ role: 'system', content: body.system });
+  for (const msg of (body.messages || [])) {
+    let content = '';
+    if (typeof msg.content === 'string') {
+      content = msg.content;
+    } else if (Array.isArray(msg.content)) {
+      content = msg.content.filter(p => p.type === 'text').map(p => p.text).join('\n');
+    }
+    messages.push({ role: msg.role, content });
+  }
+
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + GROQ_API_KEY
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: body.max_tokens || 1000,
+      temperature: 0.7,
+      messages
+    })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('Groq API ' + res.status + ': ' + err);
+  }
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content || '';
+  return { content: [{ text }] };
+}
 
 // Lance la recherche de pneus recommandés depuis un résultat (plaque ou mini-finder)
 async function lancerRecherchePneus(taille, vehicule, charge, vitesse) {
@@ -3268,12 +3354,7 @@ RÈGLES STRICTES:
 4. Prix réalistes marché français 2025`;
 
   try {
-    const res = await fetch(ANTHROPIC_WORKER_URL, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] })
-    });
-    if (!res.ok) throw new Error('Worker HTTP ' + res.status);
-    const d = await res.json();
+    const d = await anthropicFetch({ model: 'claude-sonnet-4-6', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] });
     let rawText = (d.content || []).map(c => c.text || '').join('').trim();
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Pas de JSON dans la réponse');
@@ -3295,18 +3376,9 @@ RÈGLES STRICTES:
   }
 }
 
-// Helper centralisé — appelle le Worker (clé cachée côté serveur)
-async function callAnthropic(messages, max_tokens = 500, model = 'claude-sonnet-4-20250514') {
-  const res = await fetch(ANTHROPIC_WORKER_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, max_tokens, messages })
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error('Worker ' + res.status + ': ' + err);
-  }
-  const d = await res.json();
+// Helper centralisé
+async function callAnthropic(messages, max_tokens = 500, model = 'claude-sonnet-4-6') {
+  const d = await anthropicFetch({ model, max_tokens, messages });
   return d.content.map(c => c.text || '').join('').replace(/```json|```/g, '').trim();
 }
 
@@ -3558,16 +3630,9 @@ async function searchPlaque() {
     // ── Essai 2 : Worker Cloudflare → proxy sans CORS ──
     if (!json) {
       try {
-        const res2 = await fetch(ANTHROPIC_WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ siv_proxy: true, plaque, provider: 'apiplaqueimmatriculation' })
-        });
-        if (res2.ok) {
-          const j2 = await res2.json();
-          const v2 = normalizeVehicle(j2);
-          if (v2 && v2.marque) json = v2;
-        }
+        const j2 = await anthropicFetch({ siv_proxy: true, plaque, provider: 'apiplaqueimmatriculation' });
+        const v2 = normalizeVehicle(j2);
+        if (v2 && v2.marque) json = v2;
       } catch(e2) { console.warn('[Worker SIV]:', e2.message); }
     }
 
@@ -3862,15 +3927,11 @@ RÈGLES STRICTES:
 5. Prix réalistes marché français 2025`;
 
   try {
-    const res = await fetch(ANTHROPIC_WORKER_URL, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+    const d = await anthropicFetch({
+        model: 'claude-sonnet-4-6',
         max_tokens: 1500,
         messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const d = await res.json();
+      });
     let rawText = (d.content || []).map(c => c.text || '').join('').trim();
     // Extraire le JSON même si entouré de texte ou backticks
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
@@ -4005,7 +4066,12 @@ function showTireResults(el, data, vehiculeStr) {
           ${p.points_forts.map(pt => `<li>✓ ${pt}</li>`).join('')}
         </ul>` : ''}
 
-        <button class="tr-rdv-btn" onclick="utilisierTailleBtn('${p.taille}','${(vehicule).replace(/'/g,"\\'")}',this,'${idx.charge}','${idx.vitesse}'); document.getElementById('service') && (document.getElementById('service').value='Changement de pneus'); document.getElementById('service2') && (document.getElementById('service2').value='Changement de pneus');">
+        <button class="tr-rdv-btn"
+          data-taille="${p.taille}"
+          data-vehicule="${(vehicule||'').replace(/"/g,'&quot;')}"
+          data-indice="${p.indice || (idx.charge + idx.vitesse)}"
+          data-label="${(p.marque+' '+p.modele+' '+p.taille+' '+(p.indice||'')).trim().replace(/"/g,'&quot;')}"
+          onclick="rdvSelectPneu(this)">
           → Prendre RDV avec ce pneu (${p.marque} ${p.modele})
         </button>
       </div>`;
@@ -4031,15 +4097,11 @@ function handlePhoto(e) {
     document.getElementById('photoLoading').style.display = 'block';
     document.getElementById('photoResult').classList.remove('show');
     try {
-      const res = await fetch(ANTHROPIC_WORKER_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500,
+      const d = await anthropicFetch({ model: 'claude-sonnet-4-6', max_tokens: 500,
           messages: [{ role: 'user', content: [
             { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
             { type: 'text', text: 'Lis les inscriptions sur ce pneu. Identifie la taille (ex: 205/55 R16 91V). JSON uniquement sans markdown: {"taille":"205/55 R16","alt":"","pression":"","charge":"91","vitesse":"V","label":"Lu sur votre pneu"}. Si illisible: {"taille":"Non lisible","alt":"","pression":"","charge":"—","vitesse":"—","label":"Rapprochez-vous ou appelez le 02 40 50 70 24"}' }
-          ]}] })
-      });
-      const d = await res.json();
+          ]}] });
       let txt = d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
       showResult('photoResult', JSON.parse(txt), '📷 Joindre la photo au formulaire');
     } catch(e) {
@@ -4256,16 +4318,9 @@ async function sivLookup(plaque) {
 
   // ── Essai 2 : Worker Cloudflare (fallback CORS) ──
   try {
-    const r2 = await fetch(ANTHROPIC_WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ siv_proxy: true, plaque: immat, provider: 'apiplaqueimmatriculation' })
-    });
-    if (r2.ok) {
-      const j = await r2.json();
-      const v = normalizeVehicle(j);
-      if (v && v.marque) return v;
-    }
+    const j = await anthropicFetch({ siv_proxy: true, plaque: immat, provider: 'apiplaqueimmatriculation' });
+    const v = normalizeVehicle(j);
+    if (v && v.marque) return v;
   } catch(e) { console.warn('[Worker SIV]:', e.message); }
 
   return null;
@@ -4315,12 +4370,8 @@ async function rdvSearchPlaque() {
         showMiniResult(found.taille, "Taille estimée", vehiculeLabel, idx.charge, idx.vitesse);
       } else if (marque && modele) {
         try {
-          const res = await fetch(ANTHROPIC_WORKER_URL, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 100,
-              messages: [{ role: 'user', content: `Taille pneu origine ${marque} ${modele} ${annee}. JSON uniquement: {"taille":"195/55 R16","charge":"87","vitesse":"H"}` }] })
-          });
-          const d = await res.json();
+          const d = await anthropicFetch({ model: 'claude-sonnet-4-6', max_tokens: 100,
+              messages: [{ role: 'user', content: `Taille pneu origine ${marque} ${modele} ${annee}. JSON uniquement: {"taille":"195/55 R16","charge":"87","vitesse":"H"}` }] });
           const txt = (d.content || []).map(c => c.text || '').join('').replace(/```json|```/g,'').trim();
           const r = JSON.parse(txt);
           const idx = (r.charge && r.vitesse) ? r : getIndices(r.taille || '195/55 R16');
@@ -4475,12 +4526,8 @@ async function rdvAutoVoiture() {
       taille = found.taille;
     } else {
       try {
-        const res = await fetch(ANTHROPIC_WORKER_URL, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 100,
-            messages: [{ role: 'user', content: 'Taille pneu d\'origine ' + marque + ' ' + modele + ' ' + annee + '. JSON uniquement: {"taille":"205/55 R16"}' }] })
-        });
-        const d = await res.json();
+        const d = await anthropicFetch({ model: 'claude-sonnet-4-6', max_tokens: 100,
+            messages: [{ role: 'user', content: 'Taille pneu d\'origine ' + marque + ' ' + modele + ' ' + annee + '. JSON uniquement: {"taille":"205/55 R16"}' }] });
         const r = JSON.parse(d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim());
         taille = r.taille;
       } catch(e) {
@@ -4700,7 +4747,7 @@ renderCalendar();
 renderCalendar2();
 
 // === FORMULAIRES ===
-function sendRDV(prenom, nom, phone, email, date, heure, service, taille, vehicule, source_taille, indice_charge, indice_vitesse, successId, btnEl) {
+function sendRDV(prenom, nom, phone, email, date, heure, service, taille, vehicule, source_taille, indice_charge, indice_vitesse, pneu_choisi, successId, btnEl) {
   const manquants = [];
   if (!prenom) manquants.push('prénom');
   if (!phone) manquants.push('téléphone');
@@ -4744,12 +4791,21 @@ function sendRDV(prenom, nom, phone, email, date, heure, service, taille, vehicu
         date:          date,
         heure:         heure,
         service:       service,
-        taille_pneu:   taille || '—',
+        taille_pneu:   taille || '—', // ex: 205/55 R16
+        pneu_choisi:   pneu_choisi || taille || '—',
         vehicule:      vehicule || '—',
         source_taille: source_taille || '—',
-        indice_charge: indice_charge || '—',
-        indice_vitesse: indice_vitesse || '—',
-        message:       taille ? `Taille : ${taille}${indice_charge && indice_charge !== '—' ? ' · IC: ' + indice_charge : ''}${indice_vitesse && indice_vitesse !== '—' ? ' · IV: ' + indice_vitesse : ''}${vehicule ? ' · ' + vehicule : ''}` : '—',
+        indice_charge: indice_charge && indice_charge !== '—' ? indice_charge : '—',
+        indice_vitesse: indice_vitesse && indice_vitesse !== '—' ? indice_vitesse : '—',
+        message: (function() {
+          var parts = [];
+          if (pneu_choisi && pneu_choisi !== '—') parts.push('Pneu : ' + pneu_choisi);
+          else if (taille && taille !== '—') parts.push('Taille : ' + taille);
+          if (indice_charge && indice_charge !== '—') parts.push('Charge : ' + indice_charge);
+          if (indice_vitesse && indice_vitesse !== '—') parts.push('Vitesse : ' + indice_vitesse);
+          if (vehicule && vehicule !== '—') parts.push('Véhicule : ' + vehicule);
+          return parts.length ? parts.join(' | ') : '—';
+        })(),
         photo_pneu:    photoUrl ? `<img src="${photoUrl}" style="max-width:400px;border:2px solid #c9a054;" alt="Photo pneu">` : '—',
         photo_url:     photoUrl || ''
       }).then(onSuccess).catch(onError);
@@ -4784,6 +4840,7 @@ function submitForm() {
   const source = document.getElementById('sourceTailleHidden')?.value || miniFSource || '—';
   const indice_charge = document.getElementById('indiceChargeHidden')?.value || '—';
   const indice_vitesse = document.getElementById('indiceVitesseHidden')?.value || '—';
+  const pneu_choisi = document.getElementById('pneuChoisiHidden')?.value || taille || '—';
   sendRDV(
     document.getElementById('fname').value.trim(),
     document.getElementById('lname').value.trim(),
@@ -4792,7 +4849,7 @@ function submitForm() {
     document.getElementById('date').value,
     document.getElementById('heure').value,
     document.getElementById('service').value,
-    taille, vehicule, source, indice_charge, indice_vitesse,
+    taille, vehicule, source, indice_charge, indice_vitesse, pneu_choisi,
     'formSuccess', btn
   );
 }
@@ -4806,6 +4863,7 @@ function submitForm2() {
   const source = document.getElementById('sourceTailleHidden2')?.value || miniFSource2 || '—';
   const indice_charge = document.getElementById('indiceChargeHidden2')?.value || '—';
   const indice_vitesse = document.getElementById('indiceVitesseHidden2')?.value || '—';
+  const pneu_choisi = document.getElementById('pneuChoisiHidden2')?.value || taille || '—';
   sendRDV(
     document.getElementById('fname2').value.trim(),
     document.getElementById('lname2').value.trim(),
@@ -4814,7 +4872,7 @@ function submitForm2() {
     document.getElementById('date2').value,
     document.getElementById('heure2').value,
     document.getElementById('service2').value,
-    taille, vehicule, source, indice_charge, indice_vitesse,
+    taille, vehicule, source, indice_charge, indice_vitesse, pneu_choisi,
     'formSuccess2', btn
   );
 }
@@ -5001,12 +5059,8 @@ async function rdvAutoVoiture2() {
       taille = found.taille;
     } else {
       try {
-        const res = await fetch(ANTHROPIC_WORKER_URL, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 100,
-            messages: [{ role: 'user', content: 'Taille pneu d\'origine ' + marque + ' ' + modele + ' ' + annee + '. JSON uniquement: {"taille":"205/55 R16"}' }] })
-        });
-        const d = await res.json();
+        const d = await anthropicFetch({ model: 'claude-sonnet-4-6', max_tokens: 100,
+            messages: [{ role: 'user', content: 'Taille pneu d\'origine ' + marque + ' ' + modele + ' ' + annee + '. JSON uniquement: {"taille":"205/55 R16"}' }] });
         const r = JSON.parse(d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim());
         taille = r.taille;
       } catch(e) {
@@ -5609,17 +5663,12 @@ async function sendAIMessage() {
   const history = aiConversation.slice(-12);
 
   try {
-    const res = await fetch(ANTHROPIC_WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+    const data = await anthropicFetch({
+        model: 'claude-sonnet-4-6',
         max_tokens: 500,
         system: AI_SYSTEM_PROMPT,
         messages: history
-      })
-    });
-    const data = await res.json();
+      });
     const reply = (data.content || []).map(c => c.text || '').join('').trim();
     hideTyping();
 
