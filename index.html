@@ -2992,8 +2992,11 @@ function showResult(containerId, data, btnLabel) {
       ${extras.join('')}
     </div>
     ${data.taille && data.taille !== '—' ? `
-    <button onclick="handleResultBtn(this)" data-taille="${data.taille}" data-vehicule="${(data.vehicule||'').replace(/'/g,"'")}" data-charge="${data.charge || getIndices(data.taille).charge}" data-vitesse="${data.vitesse || getIndices(data.taille).vitesse}" data-isphoto="${btnLabel && btnLabel.includes('photo') ? 'oui' : ''}" style="width:100%;margin-bottom:0.8rem;background:var(--gold);color:var(--black);border:none;padding:0.75rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem">
+    <button onclick="handleResultBtn(this)" data-taille="${data.taille}" data-vehicule="${(data.vehicule||'').replace(/'/g,"'")}" data-charge="${data.charge || getIndices(data.taille).charge}" data-vitesse="${data.vitesse || getIndices(data.taille).vitesse}" data-isphoto="${btnLabel && btnLabel.includes('photo') ? 'oui' : ''}" style="width:100%;margin-bottom:0.6rem;background:var(--gold);color:var(--black);border:none;padding:0.75rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem">
       ${btnLabel || '✓ Utiliser cette taille dans le formulaire'}
+    </button>
+    <button onclick="lancerRecherchePneus('${data.taille}','${(data.vehicule||'').replace(/'/g,"\\'")}','${data.charge || getIndices(data.taille).charge}','${data.vitesse || getIndices(data.taille).vitesse}')" style="width:100%;margin-bottom:0.8rem;background:#001a4d;color:#FFCC2B;border:none;padding:0.75rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem">
+      🔍 Voir les pneus recommandés pour ce véhicule
     </button>` : ''}
     <div class="result-cta">
       <a href="#contact" class="btn-gold" style="font-size:0.72rem;padding:0.7rem 1.5rem">→ Prendre RDV</a>
@@ -3057,8 +3060,8 @@ function utilisierTaille(taille, vehicule) {
 function handleResultBtn(btn) {
   const taille = btn.dataset.taille;
   const vehicule = btn.dataset.vehicule || '';
-  const charge = btn.dataset.charge || getIndices(taille).charge;
-  const vitesse = btn.dataset.vitesse || getIndices(taille).vitesse;
+  const charge = btn.dataset.charge && btn.dataset.charge !== '—' ? btn.dataset.charge : getIndices(taille).charge;
+  const vitesse = btn.dataset.vitesse && btn.dataset.vitesse !== '—' ? btn.dataset.vitesse : getIndices(taille).vitesse;
   const isPhoto = btn.dataset.isphoto === 'oui';
   if (isPhoto) {
     joindrPhotoAuFormulaire(taille, vehicule, btn, charge, vitesse);
@@ -3069,7 +3072,7 @@ function handleResultBtn(btn) {
 
 // Injecter taille depuis bouton (version sans event.target)
 function utilisierTailleBtn(taille, vehicule, btn, charge, vitesse) {
-  const idx = (charge && vitesse) ? { charge, vitesse } : getIndices(taille);
+  const idx = (charge && vitesse && charge !== '—' && vitesse !== '—') ? { charge, vitesse } : getIndices(taille);
   const input1 = document.getElementById('taillePneu');
   const group1 = document.getElementById('taille-group');
   if (input1) { input1.value = taille; if (group1) group1.style.display = 'flex'; }
@@ -3203,6 +3206,94 @@ const SIV_API_TOKEN = 'TokenDemo2026B';
 // ═══ CLOUDFLARE WORKER PROXY ═══
 // Remplacez par l'URL de votre Worker après déploiement
 const ANTHROPIC_WORKER_URL = 'https://pneupro-ai.bouzerailyas.workers.dev';
+
+// Lance la recherche de pneus recommandés depuis un résultat (plaque ou mini-finder)
+async function lancerRecherchePneus(taille, vehicule, charge, vitesse) {
+  // Trouver le bon conteneur résultat visible
+  const conteneurIds = ['plaqueResult','voitureResult','miniFResult','miniFResult2','photoResult'];
+  let parentEl = null;
+  for (const id of conteneurIds) {
+    const el = document.getElementById(id);
+    if (el && (el.classList.contains('show') || el.style.display === 'block')) { parentEl = el; break; }
+  }
+
+  // Créer ou réutiliser le conteneur résultat pneus
+  let pneusContainer = document.getElementById('pneus-recommandes-container');
+  if (!pneusContainer) {
+    pneusContainer = document.createElement('div');
+    pneusContainer.id = 'pneus-recommandes-container';
+    pneusContainer.style.cssText = 'margin-top:1rem;';
+    if (parentEl) parentEl.appendChild(pneusContainer);
+    else {
+      const vr = document.getElementById('voitureResult');
+      if (vr) { vr.classList.add('show'); vr.appendChild(pneusContainer); }
+    }
+  }
+
+  pneusContainer.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--text-mid);font-size:0.82rem"><div style="display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:0.5rem"></div><br>Recherche des meilleurs pneus pour <strong>${taille}</strong>…</div>`;
+  setTimeout(() => pneusContainer.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+
+  const prompt = `Tu es un expert pneumatique chez SOS Pneu Nantes.
+Véhicule : ${vehicule || 'non précisé'}
+Taille d'origine : ${taille}
+
+Génère une liste de 4 pneus réels adaptés à ce véhicule. Réponds UNIQUEMENT en JSON valide, sans markdown, sans explication.
+Format strict :
+{
+  "taille_origine": "${taille}",
+  "vehicule": "${vehicule || ''}",
+  "resultats": [
+    {
+      "marque": "Michelin",
+      "modele": "Primacy 4+",
+      "taille": "${taille}",
+      "indice": "91V",
+      "saison": "Été",
+      "note": 4.8,
+      "avis": 1240,
+      "prix_ttc": 89.90,
+      "label_ue_carburant": "A",
+      "label_ue_adherence": "A",
+      "label_ue_bruit": "69",
+      "runflat": false,
+      "xl": false,
+      "points_forts": ["Longue durée de vie", "Silence de roulement", "Freinage court sur mouillé"]
+    }
+  ]
+}
+RÈGLES STRICTES:
+1. "indice" OBLIGATOIRE pour chaque pneu (ex: "91V", "98W", "95H")
+2. Taille IDENTIQUE à ${taille} pour les 4 pneus
+3. 4 marques différentes : Michelin, Continental, Bridgestone, Goodyear
+4. Prix réalistes marché français 2025`;
+
+  try {
+    const res = await fetch(ANTHROPIC_WORKER_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] })
+    });
+    if (!res.ok) throw new Error('Worker HTTP ' + res.status);
+    const d = await res.json();
+    let rawText = (d.content || []).map(c => c.text || '').join('').trim();
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Pas de JSON dans la réponse');
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (parsed.resultats) {
+      parsed.resultats = parsed.resultats.map(p => {
+        if (!p.indice || p.indice === '—') {
+          const idx = getIndices(p.taille || taille);
+          p.indice = idx.charge + idx.vitesse;
+        }
+        return p;
+      });
+    }
+    showTireResults(pneusContainer, parsed, vehicule || taille);
+    setTimeout(() => pneusContainer.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+  } catch(e) {
+    console.error('[lancerRecherchePneus]', e);
+    pneusContainer.innerHTML = `<div class="cc-error-msg">⚠️ Impossible de charger les pneus recommandés. <a href="tel:+33240507024"><strong>02 40 50 70 24</strong></a></div>`;
+  }
+}
 
 // Helper centralisé — appelle le Worker (clé cachée côté serveur)
 async function callAnthropic(messages, max_tokens = 500, model = 'claude-sonnet-4-20250514') {
@@ -3396,10 +3487,12 @@ const indicesStandard = {
 // Retourne {charge, vitesse} selon la taille (ex: "205/55 R16")
 function getIndices(taille) {
   if (!taille) return { charge: '—', vitesse: '—' };
-  // Nettoyer la taille : enlever les éventuels indices déjà présents ("205/55 R16 91V" → "205/55 R16")
-  const match = taille.match(/(\d{3}\/\d{2}\s?[A-Z]\s?\d{2})/);
-  const clean = match ? match[1].replace(/\s/g, ' ').trim() : taille.trim();
-  return indicesStandard[clean] || { charge: '—', vitesse: '—' };
+  // Extraire uniquement la taille standard : "205/55 R16" (ignorer les indices collés comme "91V")
+  const match = taille.match(/(\d{3}\/\d{2}\s*R\s*\d{2})/i);
+  const clean = match ? match[1].replace(/\s+/g, ' ').trim().toUpperCase() : taille.trim().toUpperCase();
+  // Normaliser : "205/55R16" → "205/55 R16"
+  const normalized = clean.replace(/(\d{3}\/\d{2})\s*R\s*(\d{2})/i, '$1 R$2');
+  return indicesStandard[normalized] || { charge: '—', vitesse: '—' };
 }
 
 function findTailleFromDB(marque, modele, annee) {
@@ -3956,7 +4049,7 @@ function showMiniResult(taille, label, vehicule, charge, vitesse) {
   miniFTailleFound = taille;
   miniFVehicule = vehicule || '';
   miniFSource = label || '';
-  const idx = (charge && vitesse) ? { charge, vitesse } : getIndices(taille);
+  const idx = (charge && vitesse && charge !== '—' && vitesse !== '—') ? { charge, vitesse } : getIndices(taille);
 
   // Appliquer IMMÉDIATEMENT dans le formulaire sans attendre le clic
   const vh = document.getElementById('vehiculeHidden');
@@ -4008,6 +4101,7 @@ function showMiniResult(taille, label, vehicule, charge, vitesse) {
       </div>
     </div>
     <button onclick="applyTailleToForm()" style="margin-top:0.6rem;background:var(--gold);color:var(--black);border:none;padding:0.5rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;width:100%;min-height:40px">✓ Utiliser cette taille dans le formulaire</button>
+    <button onclick="lancerRecherchePneus('${taille}','${(vehicule||'').replace(/'/g,"\\'")}','${idx.charge}','${idx.vitesse}')" style="margin-top:0.4rem;background:#001a4d;color:#FFCC2B;border:none;padding:0.5rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;width:100%;min-height:40px">🔍 Voir les pneus recommandés</button>
   `;
   el.style.display = 'block';
   document.getElementById('miniFLoading').style.display = 'none';
@@ -4017,8 +4111,8 @@ function applyTailleToForm() {
   const result = document.getElementById('miniFResult');
   const taille = result.dataset.taille || miniFTailleFound;
   const vehicule = result.dataset.vehicule || miniFVehicule;
-  const charge = result.dataset.charge || getIndices(taille).charge;
-  const vitesse = result.dataset.vitesse || getIndices(taille).vitesse;
+  const charge = result.dataset.charge && result.dataset.charge !== '—' ? result.dataset.charge : getIndices(taille).charge;
+  const vitesse = result.dataset.vitesse && result.dataset.vitesse !== '—' ? result.dataset.vitesse : getIndices(taille).vitesse;
 
   if (taille) {
     document.getElementById('taillePneu').value = taille;
@@ -4712,7 +4806,7 @@ function showMiniResult2(taille, label, vehicule, charge, vitesse) {
   miniFTailleFound2 = taille;
   miniFVehicule2 = vehicule || '';
   miniFSource2 = label || '';
-  const idx = (charge && vitesse) ? { charge, vitesse } : getIndices(taille);
+  const idx = (charge && vitesse && charge !== '—' && vitesse !== '—') ? { charge, vitesse } : getIndices(taille);
 
   // Appliquer IMMÉDIATEMENT dans le formulaire sans attendre le clic
   const vh = document.getElementById('vehiculeHidden2');
@@ -4773,8 +4867,8 @@ function applyTailleToForm2() {
   const result = document.getElementById('miniFResult2');
   const taille = result.dataset.taille || miniFTailleFound2;
   const vehicule = result.dataset.vehicule || miniFVehicule2;
-  const charge = result.dataset.charge || getIndices(taille).charge;
-  const vitesse = result.dataset.vitesse || getIndices(taille).vitesse;
+  const charge = result.dataset.charge && result.dataset.charge !== '—' ? result.dataset.charge : getIndices(taille).charge;
+  const vitesse = result.dataset.vitesse && result.dataset.vitesse !== '—' ? result.dataset.vitesse : getIndices(taille).vitesse;
 
   if (taille) {
     document.getElementById('taillePneu2').value = taille;
