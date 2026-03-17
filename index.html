@@ -1328,42 +1328,82 @@
 
     <!-- Étape 2 : Paiement -->
     <div id="achat-step-2" style="display:none;padding:1.4rem">
-      <div style="font-family:var(--font-head);font-size:0.6rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:1rem">Informations de paiement sécurisé 🔒</div>
 
-      <div style="margin-bottom:0.9rem">
-        <label style="font-family:var(--font-head);font-size:0.62rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.12em;display:block;margin-bottom:0.35rem">Nom sur la carte *</label>
-        <input id="pay-nom" type="text" placeholder="JEAN DUPONT" autocomplete="cc-name" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:0.7rem 0.9rem;font-family:var(--font-body);font-size:0.85rem;outline:none;box-sizing:border-box" oninput="validerPaiement()">
+      <!-- Résumé montant -->
+      <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,204,43,0.08);border:1px solid rgba(255,204,43,0.25);padding:0.75rem 1rem;margin-bottom:1.2rem;border-radius:2px">
+        <span style="font-family:var(--font-head);font-size:0.65rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em">Total à payer</span>
+        <span id="pay-total" style="font-family:var(--font-head);font-size:1.25rem;font-weight:900;color:#ffcc2b"></span>
       </div>
-      <div style="margin-bottom:0.9rem">
-        <label style="font-family:var(--font-head);font-size:0.62rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.12em;display:block;margin-bottom:0.35rem">Numéro de carte *</label>
-        <input id="pay-carte" type="text" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:0.7rem 0.9rem;font-family:var(--font-head);font-size:1rem;letter-spacing:0.12em;outline:none;box-sizing:border-box" oninput="formatCarte(this);validerPaiement()">
+
+      <!-- Code promo -->
+      <div style="margin-bottom:1.1rem">
+        <label style="font-family:var(--font-head);font-size:0.58rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.15em;display:block;margin-bottom:0.4rem">Code promo</label>
+        <div style="display:flex;gap:0.5rem">
+          <input id="promo-input" type="text" placeholder="Ex : BIENVENUE10" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:0.65rem 0.9rem;font-family:var(--font-head);font-size:0.82rem;letter-spacing:0.08em;outline:none;text-transform:uppercase">
+          <button onclick="appliquerPromo()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:0.65rem 1rem;font-family:var(--font-head);font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,204,43,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Appliquer</button>
+        </div>
+        <div id="promo-msg" style="font-size:0.7rem;margin-top:0.35rem;display:none"></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.7rem;margin-bottom:0.9rem">
+
+      <!-- Séparateur -->
+      <div style="border-top:1px solid rgba(255,255,255,0.08);margin-bottom:1.1rem"></div>
+
+      <!-- Nom sur la carte -->
+      <div style="margin-bottom:0.85rem">
+        <label style="font-family:var(--font-head);font-size:0.58rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.15em;display:block;margin-bottom:0.4rem">Nom sur la carte *</label>
+        <input id="pay-nom" type="text" placeholder="JEAN DUPONT" autocomplete="cc-name" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:0.7rem 0.9rem;font-family:var(--font-body);font-size:0.88rem;outline:none;box-sizing:border-box;transition:border-color .2s" onfocus="this.style.borderColor='rgba(255,204,43,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'" oninput="validerPaiement()">
+      </div>
+
+      <!-- Numéro de carte avec logo -->
+      <div style="margin-bottom:0.85rem">
+        <label style="font-family:var(--font-head);font-size:0.58rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.15em;display:block;margin-bottom:0.4rem">Numéro de carte *</label>
+        <div style="position:relative">
+          <input id="pay-carte" type="text" placeholder="1234  5678  9012  3456" maxlength="19" autocomplete="cc-number" inputmode="numeric" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:0.7rem 3.5rem 0.7rem 0.9rem;font-family:var(--font-head);font-size:0.95rem;letter-spacing:0.15em;outline:none;box-sizing:border-box;transition:border-color .2s" onfocus="this.style.borderColor='rgba(255,204,43,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'" oninput="formatCarte(this);validerPaiement();detecterCarteType(this.value)">
+          <div id="card-type-icon" style="position:absolute;right:0.7rem;top:50%;transform:translateY(-50%);font-size:1.1rem;opacity:0.6">💳</div>
+        </div>
+      </div>
+
+      <!-- Expiration + CVV -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.7rem;margin-bottom:0.85rem">
         <div>
-          <label style="font-family:var(--font-head);font-size:0.62rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.12em;display:block;margin-bottom:0.35rem">Expiration *</label>
-          <input id="pay-exp" type="text" placeholder="MM/AA" maxlength="5" autocomplete="cc-exp" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:0.7rem 0.9rem;font-family:var(--font-head);font-size:0.9rem;letter-spacing:0.08em;outline:none;box-sizing:border-box" oninput="formatExp(this);validerPaiement()">
+          <label style="font-family:var(--font-head);font-size:0.58rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.15em;display:block;margin-bottom:0.4rem">Expiration *</label>
+          <input id="pay-exp" type="text" placeholder="MM / AA" maxlength="7" autocomplete="cc-exp" inputmode="numeric" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:0.7rem 0.9rem;font-family:var(--font-head);font-size:0.9rem;letter-spacing:0.08em;outline:none;box-sizing:border-box;transition:border-color .2s" onfocus="this.style.borderColor='rgba(255,204,43,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'" oninput="formatExp(this);validerPaiement()">
         </div>
         <div>
-          <label style="font-family:var(--font-head);font-size:0.62rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.12em;display:block;margin-bottom:0.35rem">CVV *</label>
-          <input id="pay-cvv" type="text" placeholder="123" maxlength="4" autocomplete="cc-csc" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:0.7rem 0.9rem;font-family:var(--font-head);font-size:0.9rem;letter-spacing:0.1em;outline:none;box-sizing:border-box" oninput="validerPaiement()">
+          <label style="font-family:var(--font-head);font-size:0.58rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.15em;display:block;margin-bottom:0.4rem">CVV *</label>
+          <div style="position:relative">
+            <input id="pay-cvv" type="text" placeholder="•••" maxlength="4" autocomplete="cc-csc" inputmode="numeric" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:0.7rem 2.2rem 0.7rem 0.9rem;font-family:var(--font-head);font-size:0.95rem;letter-spacing:0.2em;outline:none;box-sizing:border-box;transition:border-color .2s" onfocus="this.style.borderColor='rgba(255,204,43,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'" oninput="validerPaiement()">
+            <span style="position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);font-size:0.8rem;opacity:0.4;cursor:help" title="3 chiffres au dos de votre carte (4 pour Amex)">?</span>
+          </div>
         </div>
       </div>
+
+      <!-- Email -->
       <div style="margin-bottom:1rem">
-        <label style="font-family:var(--font-head);font-size:0.62rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.12em;display:block;margin-bottom:0.35rem">Email (confirmation) *</label>
-        <input id="pay-email" type="email" placeholder="jean@email.fr" autocomplete="email" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:0.7rem 0.9rem;font-family:var(--font-body);font-size:0.85rem;outline:none;box-sizing:border-box" oninput="validerPaiement()">
+        <label style="font-family:var(--font-head);font-size:0.58rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.15em;display:block;margin-bottom:0.4rem">Email de confirmation *</label>
+        <input id="pay-email" type="email" placeholder="jean@email.fr" autocomplete="email" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:0.7rem 0.9rem;font-family:var(--font-body);font-size:0.88rem;outline:none;box-sizing:border-box;transition:border-color .2s" onfocus="this.style.borderColor='rgba(255,204,43,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'" oninput="validerPaiement()">
       </div>
 
-      <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.65rem;color:rgba(255,255,255,0.5);margin-bottom:1rem">
-        <span style="color:#4ade80;font-size:0.8rem">🔒</span> Paiement sécurisé SSL · Vos données ne sont jamais stockées
+      <!-- Sécurité -->
+      <div style="display:flex;align-items:center;gap:0.8rem;padding:0.6rem 0.8rem;background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.15);margin-bottom:1rem;font-size:0.65rem;color:rgba(255,255,255,0.55)">
+        <span style="font-size:1rem">🔒</span>
+        <span>Paiement <strong style="color:rgba(255,255,255,0.8)">100% sécurisé</strong> — Chiffrement SSL 256 bits · Vos données bancaires ne sont jamais stockées</span>
       </div>
 
-      <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(201,160,84,0.06);border:1px solid rgba(201,160,84,0.15);padding:0.7rem 0.9rem;margin-bottom:1rem">
-        <span style="font-family:var(--font-head);font-size:0.72rem;color:rgba(255,255,255,0.7)">Total à payer</span>
-        <span id="pay-total" style="font-family:var(--font-head);font-size:1rem;font-weight:900;color:var(--gold)"></span>
+      <!-- Logos cartes -->
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;opacity:0.5;font-size:0.75rem">
+        <span title="Visa">💳 Visa</span>
+        <span style="color:rgba(255,255,255,0.2)">|</span>
+        <span title="Mastercard">💳 Mastercard</span>
+        <span style="color:rgba(255,255,255,0.2)">|</span>
+        <span title="Amex">💳 Amex</span>
+        <span style="color:rgba(255,255,255,0.2)">|</span>
+        <span title="CB">💳 CB</span>
       </div>
 
-      <button id="btn-payer" onclick="simulerPaiement()" disabled style="width:100%;background:rgba(201,160,84,0.3);color:rgba(0,0,0,0.5);border:none;padding:0.85rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;cursor:not-allowed;min-height:48px;transition:all .2s">Confirmer le paiement →</button>
-      <button onclick="allerEtape1()" style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);padding:0.6rem;font-family:var(--font-head);font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;margin-top:0.5rem;min-height:40px">← Retour</button>
+      <!-- Bouton payer -->
+      <button id="btn-payer" onclick="simulerPaiement()" disabled style="width:100%;background:rgba(255,204,43,0.25);color:rgba(255,255,255,0.4);border:none;padding:0.9rem 1rem;font-family:var(--font-head);font-weight:800;font-size:0.82rem;letter-spacing:0.12em;text-transform:uppercase;cursor:not-allowed;min-height:52px;transition:all .25s">🔒 Payer maintenant</button>
+      <button onclick="allerEtape1()" style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.45);padding:0.6rem;font-family:var(--font-head);font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;margin-top:0.5rem;min-height:40px">← Retour</button>
     </div>
 
     <!-- Étape 3 : Succès + RDV -->
@@ -2280,8 +2320,21 @@ function majRecap() {
   document.getElementById('recap-sous-total').textContent = sousTotal.toFixed(2).replace('.', ',') + ' €';
   document.getElementById('recap-montage').textContent = montage.toFixed(2).replace('.', ',') + ' €';
   document.getElementById('recap-total').textContent = total.toFixed(2).replace('.', ',') + ' €';
+  // Appliquer code promo
+  let totalFinal = total;
+  if (promoAppliquee) {
+    if (promoAppliquee.type === 'pct') totalFinal = total * (1 - promoAppliquee.val / 100);
+    else if (promoAppliquee.type === 'fixe') totalFinal = Math.max(0, total - promoAppliquee.val);
+  }
   const payTotal = document.getElementById('pay-total');
-  if (payTotal) payTotal.textContent = total.toFixed(2).replace('.', ',') + ' €';
+  if (payTotal) {
+    if (promoAppliquee) {
+      payTotal.innerHTML = \`<span style="text-decoration:line-through;opacity:0.5;font-size:0.85rem;margin-right:0.5rem">\${total.toFixed(2).replace('.',',')} €</span><span style="color:#4ade80">\${totalFinal.toFixed(2).replace('.',',')} €</span>\`;
+    } else {
+      payTotal.textContent = totalFinal.toFixed(2).replace('.', ',') + ' €';
+    }
+  }
+  window._totalFinal = totalFinal;
 }
 
 function changeQty(delta) {
@@ -2321,44 +2374,79 @@ function formatExp(input) {
 
 function validerPaiement() {
   const nom = document.getElementById('pay-nom').value.trim();
-  const carte = document.getElementById('pay-carte').value.replace(/\s/g, '');
+  const carte = document.getElementById('pay-carte').value.replace(/\s/g,'');
   const exp = document.getElementById('pay-exp').value;
   const cvv = document.getElementById('pay-cvv').value;
   const email = document.getElementById('pay-email').value.trim();
-  const ok = nom.length >= 3 && carte.length === 16 && exp.match(/^\d{2}\/\d{2}$/) && cvv.length >= 3 && email.includes('@');
+  const ok = nom.length >= 3 && carte.length >= 16 && exp.match(/^\d{2}\s?\/\s?\d{2}$/) && cvv.length >= 3 && email.includes('@');
   const btn = document.getElementById('btn-payer');
+  if (!btn) return;
   btn.disabled = !ok;
-  btn.style.background = ok ? 'var(--gold)' : 'rgba(201,160,84,0.3)';
-  btn.style.color = ok ? 'var(--black)' : 'rgba(0,0,0,0.5)';
+  btn.style.background = ok ? '#ffcc2b' : 'rgba(255,204,43,0.25)';
+  btn.style.color = ok ? '#001a4d' : 'rgba(255,255,255,0.4)';
   btn.style.cursor = ok ? 'pointer' : 'not-allowed';
+}
+
+function detecterCarteType(val) {
+  const v = val.replace(/\s/g,'');
+  const icon = document.getElementById('card-type-icon');
+  if (!icon) return;
+  if (/^4/.test(v)) icon.textContent = '🟦'; // Visa
+  else if (/^5[1-5]/.test(v)) icon.textContent = '🟥'; // Mastercard
+  else if (/^3[47]/.test(v)) icon.textContent = '🟩'; // Amex
+  else icon.textContent = '💳';
+}
+
+// Codes promo disponibles
+const CODES_PROMO = {
+  'BIENVENUE10': { type: 'pct', val: 10, label: '-10%' },
+  'NANTES15':    { type: 'pct', val: 15, label: '-15%' },
+  'MONTAGE':     { type: 'fixe', val: 25, label: '-25€ sur le montage' },
+  'ETE2025':     { type: 'pct', val: 5,  label: '-5%' },
+  'FIDELITE20':  { type: 'pct', val: 20, label: '-20%' },
+};
+let promoAppliquee = null;
+
+function appliquerPromo() {
+  const code = (document.getElementById('promo-input').value || '').trim().toUpperCase();
+  const msg = document.getElementById('promo-msg');
+  const promo = CODES_PROMO[code];
+  if (!promo) {
+    msg.style.display = 'block';
+    msg.style.color = '#f87171';
+    msg.textContent = '❌ Code promo invalide ou expiré';
+    promoAppliquee = null;
+    majRecap();
+    return;
+  }
+  promoAppliquee = { code, ...promo };
+  msg.style.display = 'block';
+  msg.style.color = '#4ade80';
+  msg.textContent = `✅ Code "${code}" appliqué : ${promo.label}`;
+  majRecap();
 }
 
 function simulerPaiement() {
   const btn = document.getElementById('btn-payer');
-  const origTxt = btn.textContent;
-  btn.textContent = '⏳ Traitement en cours…';
-  btn.disabled = true;
-  // Simuler délai de traitement paiement
+  if (btn) { btn.textContent = '⏳ Traitement…'; btn.disabled = true; }
   setTimeout(() => {
     const p = pneuSelectionne;
     const qty = qtySelectionne;
-    const total = (p.prix * qty + 25 * qty).toFixed(2).replace('.', ',');
+    const totalFinal = window._totalFinal || (p.prix * qty + 25 * qty);
+    const totalStr = totalFinal.toFixed(2).replace('.', ',');
     const ref = 'SOS-' + Date.now().toString().slice(-7);
-    document.getElementById('confirm-ref').textContent = `Référence de commande : ${ref}`;
-    document.getElementById('confirm-label').textContent = `${qty}× ${p.marque} ${p.modele} ${p.taille} ${p.indice}`;
-    document.getElementById('confirm-total').textContent = `${total} € (pneus + montage)`;
-    // Pré-remplir l'email sur le formulaire RDV
-    const emailVal = document.getElementById('pay-email').value.trim();
-    const emailRdv = document.getElementById('email');
-    if (emailRdv && emailVal) emailRdv.value = emailVal;
-    const emailRdv2 = document.getElementById('email2');
-    if (emailRdv2 && emailVal) emailRdv2.value = emailVal;
-    // Stocker pneu pour le formulaire
+    const promoTxt = promoAppliquee ? ` (code ${promoAppliquee.code} appliqué)` : '';
+    document.getElementById('confirm-ref').textContent = `Référence : ${ref}`;
+    document.getElementById('confirm-label').textContent = `${qty}× ${p.marque} ${p.modele} ${p.taille} ${p.indice}${promoTxt}`;
+    document.getElementById('confirm-total').textContent = `${totalStr} € TTC (pneus + montage)`;
+    const emailVal = document.getElementById('pay-email') ? document.getElementById('pay-email').value.trim() : '';
+    ['email','email2'].forEach(id => { const el = document.getElementById(id); if (el && emailVal) el.value = emailVal; });
     pneuAchetePourRDV(p, qty, ref);
     document.getElementById('achat-step-2').style.display = 'none';
     document.getElementById('achat-step-3').style.display = 'block';
     setStepTab(3);
-  }, 2200);
+    promoAppliquee = null;
+  }, 1800);
 }
 
 function pneuAchetePourRDV(p, qty, ref) {
