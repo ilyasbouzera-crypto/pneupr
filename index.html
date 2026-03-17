@@ -2329,7 +2329,7 @@ function majRecap() {
   const payTotal = document.getElementById('pay-total');
   if (payTotal) {
     if (promoAppliquee) {
-      payTotal.innerHTML = \`<span style="text-decoration:line-through;opacity:0.5;font-size:0.85rem;margin-right:0.5rem">\${total.toFixed(2).replace('.',',')} €</span><span style="color:#4ade80">\${totalFinal.toFixed(2).replace('.',',')} €</span>\`;
+      payTotal.innerHTML = '<span style="text-decoration:line-through;opacity:0.5;font-size:0.85rem;margin-right:0.5rem">' + total.toFixed(2).replace('.',',') + ' €</span><span style="color:#4ade80">' + totalFinal.toFixed(2).replace('.',',') + ' €</span>';
     } else {
       payTotal.textContent = totalFinal.toFixed(2).replace('.', ',') + ' €';
     }
